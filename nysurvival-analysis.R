@@ -1,5 +1,34 @@
-age.period<-function(){
-  sort(data$AgeAtDiagnosis[allincl])#27-93
+age.period<-function(allincl){
+  sort(corrected.data$AgeAtDiagnosis[allincl])#27-93
+}
+
+
+n.year.surv<-function(yn,allincl){
+  dds<-sub(" .*", "", corrected.data$Death.Date[allincl])
+  opd<-sub(" .*", "", corrected.data$OpDate[allincl])
+  dd<-ifelse(dds=="no" | dds=="No", "2020-08-03", dds)
+  opd[which(dds=="no" | dds=="No")]<-"2007-05-02"
+  opy<-as.numeric(substring(opd,1,4))
+  dy<-as.numeric(substring(dd,1,4))
+  potentials<-which(dy-opy>=yn)
+  potential<-which(dy-opy==yn)
+  
+  pid<-corrected.data$PatientID[allincl]
+  pot.pid<-pid[potentials]
+  allpot.data<-which(corrected.data$PatientID %in% pot.pid)
+  
+  opmon<-as.numeric(substring(opd[potential],6,7))
+  dmon<-as.numeric(substring(dd[potential],6,7))
+  opday<-as.numeric(substring(opd[potential],9,10))
+  dday<-as.numeric(substring(dd[potential],9,10))
+  not.nysurvived<-which(dmon<opmon | (dmon==opmon & dday<opday))
+  
+  howManyAlive<-length(potentials)-length(not.nysurvived)
+  whoIsAlive<-setdiff(allpot.data,which(corrected.data$PatientID %in% pot.pid[not.nysurvived]))
+  nysurvival<-(howManyAlive/length(allincl))*100
+  print(whoIsAlive)
+  print(nysurvival)
+  return(nysurvival)
 }
 
 
@@ -52,11 +81,11 @@ nysurv.data$M <- factor(nysurv.data$M, levels = c("One","Three","Five"))
 png(file = "nysurv-ggplot-barchart458.png",width=16,height=8,units='in',res=300)
 ggplot(nysurv.data,aes(x = M, y = H)) +
   geom_col(aes(fill = "magenta")) +
-  geom_label(aes(label = round(H, 2))) +
+  geom_label(aes(label = round(H, 2)),size=5) +
   xlab("Years after Diagnosis") +
   ylab("Survival Rate (%)")+ylim(c(0,100))+
-  ggtitle("Endometrial Cancer One-, Three-, and Five-Year Survival, Adults (458 Patients Aged 27-97 and Diagnosed during 2008-2018)")+
-  theme(legend.position = "none")
+  ggtitle("Endometrial Cancer One-, Three-, and Five-Year Survival\n(Cohort of 458 Patients Aged 27-97 and Diagnosed during 2008-2018)")+
+  theme(legend.position = "none", title = element_text(size=20,family="Calibri"), axis.text = element_text(size=16,family="Arial"))
 dev.off()
 
 surv.obj<-generate.Surv.obj(allstudypop)
