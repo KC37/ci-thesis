@@ -1,3 +1,5 @@
+# the four analyses developed for the Cancer Informatics Thesis
+
 # comparison between stages IA (superficial) and IB (deep)
 #incorrectly staging based on the depth of myometrial invasion
 
