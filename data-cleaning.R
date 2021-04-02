@@ -1,6 +1,3 @@
-# comparison between stages IA (superficial) and IB (deep)
-#incorrectly staging based on the depth of myometrial invasion
-
 #loading the necessary libraries
 library(sjmisc) # for str_contains
 library(qmrparser) # for isDigit
@@ -27,8 +24,116 @@ init.vars<-function(){
   
   histo.minv<-data$"Sup.Deep.2"
   table(histo.minv)
-  # this was for stage I: IA vs IB
-  #library(h2o)
+  }
+
+
+insert.col.ExcelTable<-function(df,scol,inFile,outFile){
+  library(xlsx)
+  # insert column at the end of Excel table
+  nworkbook <- loadWorkbook(inFile)
+  nsheets <- getSheets(nworkbook)
+  nsheets
+  addDataFrame(df, nsheets$Sheet1, startColumn = scol, startRow = 2, row.names=FALSE)
+  saveWorkbook(nworkbook,outFile)
+}
+
+
+# cleaning the staging data
+clean.stage<-function(){
+  i=0
+  vec=vector()
+  # do not use histo.stage alone bc it remains the same, while accuracy.data does not
+  for(stage in accuracy.data$histo.stage){
+    i=i+1
+    sstage<-toString(stage)
+    # introduce the character as it is - in str_contains, 
+    #but escape it in str_replace(_all)
+    if(str_contains(sstage," ")){
+      sstage<-str_replace(sstage,"\\s.+","")
+    }
+    if(str_contains(sstage,"(")){
+      sstage<-str_replace(sstage,"\\s*\\([^\\)]+\\)","")
+    }
+    if(str_contains(sstage,"?")){ # do not have to escape
+      sstage<-str_replace_all(sstage,"\\?","") # escape it
+    }
+    if(str_contains(sstage,",")){
+      sstage<-str_replace(sstage,",","")
+    }
+    if(sstage=="" || str_contains(sstage,"n",ignore.case=TRUE) || sstage=='x'){
+      vec<-c(vec,i)
+      print(sstage)
+      next # instead of continue
+    }
+    first.chr=substring(sstage,1,1)
+    last.chr=substring(sstage,nchar(sstage),nchar(sstage))
+    if(isDigit(last.chr))
+      if(nchar(sstage)==1)
+        ante.chr<-last.chr
+    else{
+      ante.chr<-first.chr
+      last.chr<-substring(sstage,nchar(sstage)-1,nchar(sstage)-1)
+    }
+    else
+      ante.chr=substring(sstage,nchar(sstage)-1,nchar(sstage)-1)
+    if(isDigit(ante.chr)){
+      nb<-as.numeric(ante.chr)
+      if(nb<=3){
+        repl<-paste(replicate(nb, "I"), collapse = "")
+      } else if(nb==4){
+        repl<-"IV"
+      } else{
+        repl<-""
+      }
+      class(ante.chr)
+      sstage<-str_replace(sstage,ante.chr,repl)
+    }
+    if(!isDigit(last.chr)&&!upper.case(last.chr)){
+      bigl<-toupper(last.chr)
+      sstage<-str_replace(sstage,last.chr,bigl)
+    }
+    if(sstage!=toString(stage)){
+      accuracy.data$histo.stage[i]<-sstage
+    }
+  }
+  print(i)
+  vec
+  # removing uncleaned histological stages
+  accuracy.data<-accuracy.data[-vec,]
+  table(accuracy.data$histo.stage)
+  table(accuracy.data$MRI.stage) # 1 empty cell missed
+  nrow(accuracy.data)
+  # removing rows with empty MRI stages
+  accuracy.data<-subset(accuracy.data,MRI.stage!="")
+  table(accuracy.data$MRI.stage)
+}
+
+
+# cleaning the stage-cleaned data on depth of myometrial invasion
+clean.minv<-function(){
+  library(Xmisc)
+  
+  table(accuracy.data$histo.minv)
+  accuracy.data$histo.minv[startswith(accuracy.data$histo.minv,"sup",ignore.case=TRUE)]<-"superficial"
+  accuracy.data$histo.minv[startswith(accuracy.data$histo.minv,"deep",ignore.case=TRUE)]<-"deep"
+  table(accuracy.data$histo.minv)
+  
+  table(accuracy.data$MRI.minv)
+  #be careful at "superficial/deep"!
+  accuracy.data$MRI.minv[startswith(accuracy.data$MRI.minv,"sup",ignore.case=TRUE)]<-"superficial"
+  accuracy.data$MRI.minv[startswith(accuracy.data$MRI.minv,"deep",ignore.case=TRUE)]<-"deep"
+  table(accuracy.data$MRI.minv)
+  
+  accuracy.data<-subset(accuracy.data, histo.minv %in% c("superficial","deep") & MRI.minv %in% c("superficial","deep"))
+  table(accuracy.data$histo.minv)
+  table(accuracy.data$MRI.minv)
+}
+
+# comparison between stages IA (superficial) and IB (deep) and other stages against their corresponding involvement
+#incorrectly staging based on the MRI findings according to FIGO table 2009
+compareMRIstageW.MRIfindings<-function(){
+  # compare depth of invasion against stage I: IA vs IB
+  
   stIAvalid<-which(data$X.2=="IA"&str_contains(data$Sup.Deep,"sup",ignore.case = TRUE)|
                      data$X.2=="IA"&str_contains(data$Sup.Deep.1,"sup",ignore.case = TRUE)&!str_contains(data$Sup.Deep.1,"deep",ignore.case = TRUE) )
   cat(length(stIAvalid),"out of",length(which(data$X.2=="IA")),"cases are valid, i.e. the MRI findings are in accordance with the MRI staging (IA)",sep=" ")
@@ -214,105 +319,6 @@ init.vars<-function(){
   insert.col.ExcelTable(rid.df,ncol(dfall)+1,"MRI_discrepancies.xlsx","MRI_all_discrepancies.xlsx")
 }
 
-insert.col.ExcelTable<-function(df,scol,inFile,outFile){
-  library(xlsx)
-  # insert column at the end of Excel table
-  nworkbook <- loadWorkbook(inFile)
-  nsheets <- getSheets(nworkbook)
-  nsheets
-  addDataFrame(df, nsheets$Sheet1, startColumn = scol, startRow = 2, row.names=FALSE)
-  saveWorkbook(nworkbook,outFile)
-}
-
-# cleaning the staging data
-clean.stage<-function(){
-  i=0
-  vec=vector()
-  # do not use histo.stage alone bc it remains the same, while accuracy.data does not
-  for(stage in accuracy.data$histo.stage){
-    i=i+1
-    sstage<-toString(stage)
-    # introduce the character as it is - in str_contains, 
-    #but escape it in str_replace(_all)
-    if(str_contains(sstage," ")){
-      sstage<-str_replace(sstage,"\\s.+","")
-    }
-    if(str_contains(sstage,"(")){
-      sstage<-str_replace(sstage,"\\s*\\([^\\)]+\\)","")
-    }
-    if(str_contains(sstage,"?")){ # do not have to escape
-      sstage<-str_replace_all(sstage,"\\?","") # escape it
-    }
-    if(str_contains(sstage,",")){
-      sstage<-str_replace(sstage,",","")
-    }
-    if(sstage=="" || str_contains(sstage,"n",ignore.case=TRUE) || sstage=='x'){
-      vec<-c(vec,i)
-      print(sstage)
-      next # instead of continue
-    }
-    first.chr=substring(sstage,1,1)
-    last.chr=substring(sstage,nchar(sstage),nchar(sstage))
-    if(isDigit(last.chr))
-      if(nchar(sstage)==1)
-        ante.chr<-last.chr
-    else{
-      ante.chr<-first.chr
-      last.chr<-substring(sstage,nchar(sstage)-1,nchar(sstage)-1)
-    }
-    else
-      ante.chr=substring(sstage,nchar(sstage)-1,nchar(sstage)-1)
-    if(isDigit(ante.chr)){
-      nb<-as.numeric(ante.chr)
-      if(nb<=3){
-        repl<-paste(replicate(nb, "I"), collapse = "")
-      } else if(nb==4){
-        repl<-"IV"
-      } else{
-        repl<-""
-      }
-      class(ante.chr)
-      sstage<-str_replace(sstage,ante.chr,repl)
-    }
-    if(!isDigit(last.chr)&&!upper.case(last.chr)){
-      bigl<-toupper(last.chr)
-      sstage<-str_replace(sstage,last.chr,bigl)
-    }
-    if(sstage!=toString(stage)){
-      accuracy.data$histo.stage[i]<-sstage
-    }
-  }
-  print(i)
-  vec
-  # removing uncleaned histological stages
-  accuracy.data<-accuracy.data[-vec,]
-  table(accuracy.data$histo.stage)
-  table(accuracy.data$MRI.stage) # 1 empty cell missed
-  nrow(accuracy.data)
-  # removing rows with empty MRI stages
-  accuracy.data<-subset(accuracy.data,MRI.stage!="")
-  table(accuracy.data$MRI.stage)
-}
-
-# cleaning the stage-cleaned data on depth of myometrial invasion
-clean.minv<-function(){
-  library(Xmisc)
-  
-  table(accuracy.data$histo.minv)
-  accuracy.data$histo.minv[startswith(accuracy.data$histo.minv,"sup",ignore.case=TRUE)]<-"superficial"
-  accuracy.data$histo.minv[startswith(accuracy.data$histo.minv,"deep",ignore.case=TRUE)]<-"deep"
-  table(accuracy.data$histo.minv)
-  
-  table(accuracy.data$MRI.minv)
-  #be careful at "superficial/deep"!
-  accuracy.data$MRI.minv[startswith(accuracy.data$MRI.minv,"sup",ignore.case=TRUE)]<-"superficial"
-  accuracy.data$MRI.minv[startswith(accuracy.data$MRI.minv,"deep",ignore.case=TRUE)]<-"deep"
-  table(accuracy.data$MRI.minv)
-  
-  accuracy.data<-subset(accuracy.data, histo.minv %in% c("superficial","deep") & MRI.minv %in% c("superficial","deep"))
-  table(accuracy.data$histo.minv)
-  table(accuracy.data$MRI.minv)
-}
 
 print.incorrect.stage<-function(){
   stage.diff <- which(accuracy.data$histo.stage!=accuracy.data$MRI.stage)
@@ -321,12 +327,14 @@ print.incorrect.stage<-function(){
   sapply(stage.diff, function(x) paste0("MRI staged ", accuracy.data$MRI.stage[x], ", whereas tissue examination/histology showed ", accuracy.data$histo.stage[x]))
 }
 
+         
 print.incorrect.minv<-function(){
   minv.diff <- which(accuracy.data$histo.minv!=accuracy.data$MRI.minv)
   length(minv.diff) # 73 incorrectly assessed depth of myom. inv.
   sapply(minv.diff, function(x) paste0("invassion depth assessed with MRI as ", accuracy.data$MRI.minv[x], ", whereas tissue examination/histology showed ", accuracy.data$histo.minv[x], " invasion"))
 }
 
+         
 # add column from the large dataframe called "data" to another smaller dataframe
 add.entire.column<-function(df,raw.name,new.name){
   # extract column index by column name
@@ -346,6 +354,7 @@ add.entire.column<-function(df,raw.name,new.name){
   return(df)
 }
 
+         
 add.column<-function(df,raw.name,new.name,rindices){
   cindex<-grep(raw.name,colnames(data))
   if(nrow(df)==0)
@@ -361,6 +370,7 @@ add.column<-function(df,raw.name,new.name,rindices){
   return(df)
 }
 
+         
 add.patient.report.data<-function(rind){
   maindf<-data.frame()
   maindf<-add.column(maindf,"PatientID","PatientID",rind)
@@ -372,6 +382,7 @@ add.patient.report.data<-function(rind){
   return(maindf)
 }
 
+         
 create.table.rs<-function(ind){
   wrong.risks<-add.patient.report.data(ind)
   wrong.risks<-add.column(wrong.risks,"OpDate","OpDate",ind)
@@ -389,13 +400,15 @@ create.table.rs<-function(ind){
   return(wrong.risks)
 }
 
+         
 create.ExcelTable.file<-function(df,file.name)
 {
   library(writexl)
   write_xlsx(df,paste0("C:\\Users\\Casi\\Documents\\EndoProj\\",file.name,".xlsx"))
 }
 
-clean.risk.scores<-function(){
+         
+compareHistoW.risk.scores<-function(){
   Lhisto.findings<-which(data$Risk.score=="low"&(data$X.1=="mucinous"&data$STAGE=="IA"&data$Grade==1 |
                                                    data$X.1=="mucinous"&data$STAGE=="IA"&data$Grade==2 |
                                                    data$X.1=="endometrioid"&data$STAGE=="IA"&data$Grade==1 |
@@ -494,12 +507,21 @@ clean.risk.scores<-function(){
   
 }
 
+         
+check4discrep<-function()
+{
+  compareMRIstageW.MRIfindings()
+  compareHistoW.risk.scores()
+}  
+
+         
 get.MRI.findings<-function(){
   start<-grep("Y.N.4", colnames(data))
   end<-grep("Y.N.22", colnames(data))
   return(seq(start,end,by=5))
 }
 
+         
 create.table.study.pop<-function(intind){
   PatientID<-data$PatientID[intind]
   RadiomicsCaseID<-data$radiomicsCaseID[intind]
@@ -515,6 +537,7 @@ create.table.study.pop<-function(intind){
   return(intdf)
 }
 
+         
 get.all.death.info<-function()
 {
   noi<-which(data$Death.Date %in% c("no","No","no ") & data$Reasons.for.Exclusion=="include")
@@ -585,6 +608,7 @@ get.all.death.info<-function()
   data$Risk.score[setdiff(noMRIf1,noMRIf)] #excluded bc no risk score
 }
 
+         
 all.MRI.recheck<-function(){
   colnames(data30MRI)[1]<-"Radiomics.ID"
   data$PatientID[which(data$radiomicsCaseID %in% data30MRI$Radiomics.ID)]
@@ -624,6 +648,7 @@ all.MRI.recheck<-function(){
   #not working: data$PatientID[which(grepl("^[A-Za-z]+$",data$radiomicsCaseID[1]))]#only letters
 }
 
+         
 add.categories<-function(){
   library(sjmisc)
   #the constant vector first used in the function clean.risk.scores
@@ -706,8 +731,10 @@ add.categories<-function(){
   data$Reasons.for.Exclusion[alr.excl.ind]
   #data$Reasons.for.Exclusion[which(data$Reasons.for.Exclusion %nin% c("missingMRI","include"))]
   data$Reasons.for.Exclusion[alr.excl.ind]<-add.reason("@ the beginning",alr.excl.ind,"missingMRI")
+  }
 
-  
+         
+compare.myTable.wExtTable<-function(){
   #colnames(dataEC416)[1]<-"PatientID"
   dataEC416$PatientID
   inclInStudy<-which(data$Reasons.for.Exclusion=="include" &
@@ -726,7 +753,7 @@ add.categories<-function(){
   difftime("2020-08-03","2012-02-08",tz="GMT", units = "days")
   difftime("2017-03-29","2012-02-09",tz="GMT", units = "days")
   difftime("2020-08-03","2012-02-09",tz="GMT", units = "days")
-  #he considered 3 august 2020(=the censorship date) even for the patients 
+  #a column from an external table with time from operation to 3 august 2020(=the censorship date) even for the patients 
   #who died before the end of the study
   
   extind<-which(data$PatientID %in% whatExtHas)
@@ -779,7 +806,10 @@ add.categories<-function(){
   intdf
   library(writexl)
   write_xlsx(intdf,"C:\\Users\\Casi\\Documents\\EndoProj\\Extra_Patients.xlsx")
+}
   
+         
+handle.patientsheet2<-function(){  
   #incomplete!! added a complete query later on
   nd<-which(data$Reasons.for.Exclusion=="include"&!grepl("/",data$Death.Date) & data$Death.Date %nin% c("no","No","no "))
   #all included cases without death info except for "dying/no"
@@ -791,3 +821,99 @@ add.categories<-function(){
   #dataf$"Event Status"<-ifelse(os.event[nd]==1,"dead","alive")
   library(writexl)
   write_xlsx(dataf,"C:\\Users\\Casi\\Documents\\EndoProj\\NoInfo_on_DeathDate.xlsx")
+  condition<-which(grepl("recurrence",dataS2$Date.op,ignore.case=TRUE) | 
+   grepl("recurrence",dataS2$Notes,ignore.case=TRUE) | 
+   grepl("recurrence",dataS2$X,ignore.case=TRUE))
+  ids<-dataS2$PatientID[condition]
+  rn<-which(data$PatientID %in% id)
+  #rn<-intersect(583:627,which(...))
+  data$Reasons.for.Exclusion[rn]<- add.reason("@ the end",rn, "recurrence")
+  
+  conditionInfo<-which(grepl("info",dataS2$X,ignore.case=TRUE) | 
+                      grepl("No note on cerner",dataS2$Notes,ignore.case=TRUE) |
+                      grepl("Nothing",dataS2$Notes,ignore.case=TRUE) |
+                      dataS2$Date.op==""&dataS2$X=="")#!grepl("recurrent",dataS2$Notes,ignore.case=TRUE)&!grepl("benign",dataS2$Notes,ignore.case=TRUE)))
+  idsInfo<-dataS2$PatientID[conditionInfo]
+  rnInfo<-which(data$PatientID %in% idsInfo)
+  data$Reasons.for.Exclusion[rnInfo]<-add.reason("@ the end",rnInfo, "insufficient surgical information")
+  
+  conditionAdv<-which(grepl("advanced",dataS2$Date.op,ignore.case=TRUE) |
+                      grepl("advanced",dataS2$X,ignore.case=TRUE))
+  idsAdv<-dataS2$PatientID[conditionAdv]
+  rnAdv<-which(data$PatientID %in% idsAdv)
+  data$Reasons.for.Exclusion[rnAdv]<-add.reason("@ the end",rnAdv, "no surgery (advanced disease)")
+  
+  conditionElsew<-which(grepl("elsewhere",dataS2$Date.op,ignore.case=TRUE) |
+                        grepl("elsewhere",dataS2$X,ignore.case=TRUE) |
+                        grepl("operated on a diff hospital",dataS2$X,ignore.case=TRUE))
+  idsElsew<-dataS2$PatientID[conditionElsew]
+  rnElsew<-which(data$PatientID %in% idsElsew)
+  data$Reasons.for.Exclusion[rnElsew]<-add.reason("@ the end",rnElsew, "surgery elsewhere")
+  #which(grepl("surgery elsewhere",data$Reasons.for.Exclusion))
+  
+  particase1<-which(data$PatientID=="EndoRad_616")
+  data$Reasons.for.Exclusion[particase1]<-paste0(data$Reasons.for.Exclusion[particase1]," & no surgery (treated conservatively elsewhere)")
+  
+  particase2<-which(data$PatientID=="EndoRad_622")
+  data$Reasons.for.Exclusion[particase2]<-paste0(data$Reasons.for.Exclusion[particase2]," & no cancer")
+  
+  table(dataS2$Palliative)
+  table(dataS2$Palliative.)#Palliative? this one is accurate!
+  conditionPalliv<-which(grepl("palliative",dataS2$X,ignore.case=TRUE)|grepl("palliative",dataS2$Notes,ignore.case=TRUE)
+                         | dataS2$Palliative.=="y")
+  
+  conditionCons<-which(!grepl("young",dataS2$Date.op,ignore.case=TRUE)&!grepl("Dubai",dataS2$Notes)&(grepl("conservative",dataS2$X,ignore.case=TRUE) |
+                       grepl("conservative",dataS2$Date.op,ignore.case=TRUE)))
+  idsCons<-dataS2$PatientID[conditionCons]
+  rnCons<-which(data$PatientID %in% idsCons)
+  data$Reasons.for.Exclusion[rnCons]<-add.reason("@ the end",rnCons, "no surgery (treated conservatively)")
+  
+  conditionYoung<-which(grepl("young",dataS2$Date.op,ignore.case=TRUE))
+  idsYoung<-dataS2$PatientID[conditionYoung]
+  rnYoung<-which(data$PatientID %in% idsYoung)
+  data$Reasons.for.Exclusion[rnYoung]<-add.reason("@ the end",rnYoung, "too young for surgery (treated conservatively)")
+  
+  #remainingIds<-setdiff(1:49,allcond)
+  all_conditionProvera<-which(grepl("provera",dataS2$Notes,ignore.case=TRUE) |
+                          grepl("progesterone therapy",dataS2$Notes))
+  #conditionProvera<-intersect(remainingIds,all_conditionProvera)
+  conditionProvera<-setdiff(all_conditionProvera,c(25,33,41))
+  idsProvera<-dataS2$PatientID[conditionProvera]
+  rnProvera<-which(data$PatientID %in% idsProvera)
+  data$Reasons.for.Exclusion[rnProvera]<-add.reason("@ the end",rnProvera, "on Provera")
+  
+  conditionDecl<-which(grepl("decline",dataS2$S.P.D.) | 
+        grepl("decline",dataS2$Notes,ignore.case=TRUE))
+  
+  all_conditionFit<-which(grepl("fit",dataS2$Date.op,ignore.case=TRUE) |
+                      grepl("fit",dataS2$X,ignore.case=TRUE))
+  # 10 is not fit, but I wrote it manually
+  conditionFit<-setdiff(all_conditionFit,c(8,10,15))
+  idsFit<-dataS2$PatientID[conditionFit]
+  rnFit<-which(data$PatientID %in% idsFit)
+  data$Reasons.for.Exclusion[rnFit]<-add.reason("@ the end",rnFit, "not fit for surgery")
+  
+  
+  allcond<-c(condition,conditionInfo,conditionAdv,conditionElsew,41,47,28,conditionCons,conditionYoung,15,all_conditionProvera,conditionDecl,44,conditionFit)
+  setdiff(1:49,allcond)
+  
+  
+  add.column.ExcelTable("Reasons.for.Exclusion")
+  data$Reasons.for.Exclusion
+}
+
+         
+add.reason<-function(place, pos, word)
+{
+  if(place=="@ the beginning")
+    #paste0("missingMRI & ",data$Reasons.for.Exclusion[alr.excl.ind])
+    sth<-sapply(data$Reasons.for.Exclusion[pos],function(x){x<-paste0(word," & ",x)},USE.NAMES = FALSE)
+  else if(place=="@ the end")
+    sth<-sapply(data$Reasons.for.Exclusion[pos],function(x){x<-paste0(x," & ",word)},USE.NAMES = FALSE)
+  return(sth)
+ 
+  #alternatives: lapply and 
+  #data$Reasons.for.Exclusion[row.nb]<-mapply(paste0,data$Reasons.for.Exclusion[row.nb]," & recurrence",USE.NAMES = FALSE)
+  #mapply(paste0,"ana","are",USE.NAMES = FALSE)
+}
+
