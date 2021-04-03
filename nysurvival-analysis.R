@@ -1,3 +1,7 @@
+library(survival)
+library(ggplot2)
+
+
 age.period<-function(allincl){
   sort(corrected.data$AgeAtDiagnosis[allincl])#27-93
 }
@@ -73,7 +77,6 @@ barplot(H,names.arg=M,
 dev.off()
 
 #same plot generated with ggplot2
-library(ggplot2)
 nysurv.data<-data.frame(H,M)
 M1<-M
 M<-factor(M)
@@ -114,4 +117,13 @@ ggplot(nysurv.dat,aes(x = nams, y = ysurv)) +
   ggtitle("Endometrial Cancer One-, Three-, and Five-Year Survival (458 Patients Aged 27-97 and Diagnosed during 2008-2018)")+
   theme(legend.position = "none")
 dev.off()
+}
+
+
+compute.median.followup<-function(){
+library(prodlim)
+cdatall<-corrected.data[allstudypop,]
+tm<-surv.obj[,1]
+ev<-surv.obj[,2]
+quantile(prodlim(Surv(tm,ev)~1,data=cdatall,reverse=TRUE))
 }
