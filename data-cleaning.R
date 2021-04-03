@@ -916,4 +916,780 @@ add.reason<-function(place, pos, word)
   #data$Reasons.for.Exclusion[row.nb]<-mapply(paste0,data$Reasons.for.Exclusion[row.nb]," & recurrence",USE.NAMES = FALSE)
   #mapply(paste0,"ana","are",USE.NAMES = FALSE)
 }
+         
+         
+add.missing.deathInfo<-function()
+{
+  colnames(revisedDeathInfo)[1]<-"PatientID"
+  updatedPatients<-revisedDeathInfo$PatientID[which(revisedDeathInfo$X=="not dead")]
+  corrected.data$PatientID[corrected.data$PatientID %in% updatedPatients]
+  corrected.data$Death.Date[corrected.data$PatientID %in% updatedPatients]
+  corrected.data$Death.Date[corrected.data$PatientID %in% updatedPatients]<-"no"
+  corrected.data$Death.Date[which(corrected.data$Death.Date=="No")]<-"no"
+  table(corrected.data$Death.Date)
+  #corrected.data[20,2],corrected.data[20,53]
+  ids<-which(corrected.data$PatientID %in% updatedPatients)
+  library(xlsx)
+  workbook_vmar <- loadWorkbook(file = "EC_data_10mar2021.xlsx")
+  sheets <- getSheets(workbook_vmar)
+  ids3<-ids+3
+  rows  <- getRows(sheets$AllCases,rowIndex = ids3)   # get all the rows
+  
+  cc<-getCells(rows,colIndex = c(53))
+    #setCellValue(cc$`627.53`,"hey")
+    #nm<-names(cc)[70]
+    #setCellValue(cc[[nm]],"hey")
+  
+  indc <- paste0(ids+3,".53")
+  # col1<-paste("\`627",".53\`",sep="")
+  # cc$as.name(col1)
+  # cc1<-cc
+  # lapply(cc[[nms]],setCellValue,"no")
+  
+  
+  new.indc<-which(names(cc) %in% indc)
+  #names(cc)<-indc
+  for(i in new.indc){
+    nmi<-names(cc)[i]
+    setCellValue(cc[[nmi]],"no")
+  }
+  #setCellValue(cc[[60280]],"no")
+  # idp<-4
+  # cc1[paste0(ids,".53")]<-rep(c(no),times=length(ids))
+  # setCellValue(cc[paste0(ids+3,".53")],rep(c(no),times=length(ids)))
+  # mapply(setCellValue, cc[paste0(ids,".53")], no)
+  # lapply(cc[paste0(ids,".53")],setCellValue,no)
+  # for(cell in cc[paste0(ids,".53")])
+  #   print(cell)
+  cc[paste0(ids+3,".53")]<-rep(c(no),times=length(ids))
+  # cells<-cc[paste0(ids+3,".53")]
+  # setCellValue(cc,cc)
+  # lapply(cells, setCellValue, "no")
+  # indc <- paste0(ids+3,".53")
+  # mapply(setCellValue, cc[indc],"no")
+  # lapply(cc[indc],function(x){})
+  # for(i in indc)
+  #   setCellValue(cc[i],"no")
+  # lapply(setCellValue,lapply(cc,function(x){setCellValue(x,no)}))
+    #setCellValue(cell,no)
+  #cc1[c("14.30","14.32")]<-rep(c(no),2)
+  # lapply(cc1,function(x){
+  #   vname<-paste(idp,".53",sep="")
+  #   cc[[vname]]<-ifelse(idp %in% ids,no,x)
+  #   idp<-idp+1
+  # })
+  #tm<-paste0(627,".53")
+  #options(useFancyQuotes = c("\x60","\x60","\x60","\x60"))#"\xab", "\xbb", "\xbf", "?"))
+  #col1<-as.name(sQuote(tm))#,dQuote(".53"))
+  
+  no<-new(J("java.lang.String"), "nope")
+  cc[setdiff(indc,names(cc))]<-rep(c(no),times=length(ids)-3)
+  setCellValue(cc[["135.53"]],"no")
+  cc$"135.53"<-"no"
+  saveWorkbook(workbook_vmar,file = "EC_data_12mar2021.xlsx")
+  #how many empty cells are in Death Date column
+  #emptydd<-which(data$Reasons.for.Exclusion %in% c("include","missingMRI")&data$Death.Date=="")
+  #length(emptydd)
+  studypop1<-studypop
+  studypop<-which(corrected.data$Reasons.for.Exclusion=="include" &
+          (grepl("0",corrected.data$Death.Date) | corrected.data$Death.Date %in% c("no","No")))#,"no ")))
+  #not in version 15 march
+  corrected.data$Risk.score[65]
+  corrected.data$Reasons.for.Exclusion[65]<-"no risk score assessment"
+  #corrected.data$X.2[2]<-"IIIC1"
+  table(corrected.data$Reasons.for.Exclusion[which(corrected.data$X.1 %in% excluded.subtypes)])
+  corrected.data$PatientID[intersect(which(corrected.data$Reasons.for.Exclusion=="missingMRI"),which(corrected.data$X.1 %in% excluded.subtypes))]
+  corrected.data$Reasons.for.Exclusion[178]<-"missingMRI & stromal"
+  #not in version 15 march
+  
+  table(corrected.data$Grade[studypop])
+  table(corrected.data$STAGE[studypop])
+  table(corrected.data$X.1[studypop])
+  table(corrected.data$X.2[studypop])
+  table(corrected.data$X.2)
+  allstudypop1<-allstudypop
+  allstudypop<-which(corrected.data$X.2!="" & corrected.data$Reasons.for.Exclusion %in% c("include","missingMRI") &
+                    (grepl("0",corrected.data$Death.Date) | corrected.data$Death.Date %in% c("no","No")))#,"no ")))
+  table(corrected.data$Grade[allstudypop])
+  table(corrected.data$STAGE[allstudypop])
+  table(corrected.data$X.1[allstudypop])
+  table(corrected.data$X.2[allstudypop])
+  table(corrected.data$Availability.of.MRI[allstudypop])
+  table(corrected.data$Reasons.for.Exclusion[allstudypop])
+  table(chemotherapy[allstudypop])#in column "Yes.No"
+  table(radiotherapy[allstudypop])#in column "Yes.No.1"
+  
+  genstage<-unique(c(2,intersect(allstudypop,which(corrected.data$X.2=="IIIC")),intersect(allstudypop,which(corrected.data$STAGE=="IIIC"))))
+  allcids<-c(grep("PatientID",colnames(corrected.data)),grep("radiomicsCaseID",colnames(corrected.data)),grep("AgeAtDiagnosis",colnames(corrected.data)),grep("OpDate",colnames(corrected.data)),grep("STAGE",colnames(corrected.data)),grep("Grade",colnames(corrected.data)),grep("X.1",colnames(corrected.data)),grep("MRI.date",colnames(corrected.data)),cids)
+  genst.df<-data.frame()
+  genst.df<-corrected.data[genstage,allcids]
+  create.ExcelTable.file(genst.df,"general_stageIIIC_insteadOf_IIIC1_or_IIIC2")
+  corrected.data$Reasons.for.Exclusion[genstage]
+  corrected.data$Availability.of.MRI[genstage]
+  #not in version 15 March
+  2 %in% genstage
+  corrected.data$X.2[2]<-"IIIC"
+  corrected.data$Reasons.for.Exclusion[2]<-"incorrect staging classification"
+  corrected.data$STAGE[26]<-"IV"
+  corrected.data$X.2[26]<-"IIIC1"
+  corrected.data$Reasons.for.Exclusion[26]<-"include"
+  corrected.data$STAGE[36]
+  corrected.data$X.2[36]<-"IIIC1"
+  corrected.data$Reasons.for.Exclusion[36]<-"include"
+  corrected.data$STAGE[170]<-"IIIC2"
+  corrected.data$X.2[170]
+  corrected.data$Reasons.for.Exclusion[170]
+  corrected.data$STAGE[208]
+  corrected.data$X.2[208]
+  corrected.data$Reasons.for.Exclusion[208]
+  
+  chemotherapy<-corrected.data$"Yes.No"
+  y.n<-corrected.data$"Yes.No"
+  chemotherapy[which(grepl("y",y.n,ignore.case = TRUE)&!grepl("\\?",y.n)&nchar(y.n)<=nchar("y (for recurrence)"))]<-"yes"
+  chemotherapy[which(grepl("n",y.n,ignore.case = TRUE)&!grepl("\\?",y.n)&nchar(y.n)<=3|grepl("decline",y.n))]<-"no"
+  table(chemotherapy)
+  chemo.complete<-which(chemotherapy %in% c("yes","no"))
+  missingChemo<-setdiff(studypop,chemo.complete)
+  radiotherapy<-corrected.data$"Yes.No.1"
+  y.n.1<-corrected.data$"Yes.No.1"
+  radiotherapy[which(grepl("y",y.n.1,ignore.case = TRUE)&!grepl("\\?",y.n.1)&nchar(y.n.1)<=nchar("y(Mt Vernon)"))]<-"yes"
+  radiotherapy[which((grepl("n",y.n.1,ignore.case = TRUE)&!grepl("\\?",y.n.1)&nchar(y.n.1)<=3|grepl("no |n ",y.n.1))&!grepl("y/n",radiotherapy))]<-"no"
+  table(radiotherapy)
+  radth.complete<-which(radiotherapy %in% c("yes","no"))
+  missingRadth<-setdiff(studypop,radth.complete)
+  length(studypop)-length(missingRadth)
+  table(corrected.data$ImageVoxelSize.mm.)
+}
+         
+
+find.citations<-function(){
+  citation("survival")
+  citation("survminer")
+}
+
+add.missing.MRInfo<-function(){
+  pid1<-data71MRIstaged$PatientID[which(is.na(data71MRIstaged$MRI.Stage))]
+  ids1<-which(corrected.data$PatientID %in% pid1)
+  corrected.data$X.2[ids1]<-NA
+  corrected.data$Availability.of.MRI[ids1]
+  corrected.data$Reasons.for.Exclusion[ids1]
+  corrected.data$Availability.of.MRI[469]<-"missing MRI stage ONLY"
+  corrected.data$Reasons.for.Exclusion[469]<-"missingMRI"
+  #manually changed (forgot about it at first)
+  corrected.data$Availability.of.MRI[179]<-"missing MRI stage, depth of invasion, and other MRI findings"
+  
+  library(xlsx)
+  workbook_vmar1<-loadWorkbook(file = "EC_data_11mar2021.xlsx")
+  sheets1<-getSheets(workbook_vmar1)
+  Ids1<-ids1+3
+  rows1<-getRows(sheets1$AllCases,rowIndex = Ids1)
+  cc1<-getCells(rows1,colIndex = c(126))
+  for(i in 1:length(cc1)){
+    nmi<-names(cc1)[i]
+    setCellValue(cc1[[nmi]],"NA",showNA = TRUE)
+  }
+  saveWorkbook(workbook_vmar1,file = "EC_data_11mar2021_ARexcl.xlsx")
+  
+  inclMRIs<-which(data71MRIstaged$Myometrial.Invasion %in% c("sup","deep"))
+  pid2<-data71MRIstaged$PatientID[inclMRIs]
+  ids2<-which(corrected.data$PatientID %in% pid2)
+  #corrected.data$Depth.of.Myometrial.Invasion[ids2]<-data71MRIstaged$Myometrial.Invasion[inclMRIs]
+  s<-grep("MRI.Stage", colnames(data71MRIstaged))
+  e<-grep("L.inguinal.LN", colnames(data71MRIstaged))
+  start<-grep("Y.N.4", colnames(corrected.data))
+  end<-grep("Y.N.22", colnames(corrected.data))
+  data71MRIstaged$MRI.Stage[which(data71MRIstaged$MRI.Stage=="1A")]<-"IA"
+  for(i in s:e)
+    print(table(data71MRIstaged[inclMRIs,i]))
+  cids<-c(grep("X.2",colnames(corrected.data)),grep("Depth.of.Myometrial.Invasion",colnames(corrected.data)),seq(start,end,by=5))
+  corrected.data[ids2,cids]<-data71MRIstaged[inclMRIs,seq(s,e)]
+  corrected.data$Availability.of.MRI[ids2]<-"yes"
+  corrected.data$Reasons.for.Exclusion[ids2]<-"include"
+  cids2<-c(cids,grep("Availability.of.MRI",colnames(corrected.data)),grep("Reasons.for.Exclusion",colnames(corrected.data)))
+  
+  library(xlsx)
+  workbook_vmar2<-loadWorkbook(file = "EC_data_11mar2021_ARexcl.xlsx")
+  sheets2<-getSheets(workbook_vmar2)
+  Ids2<-ids2+3
+  rows2<-getRows(sheets2$AllCases,rowIndex = Ids2)
+  cc2<-getCells(rows2,colIndex = cids2)
+  library(stringr)
+  for(i in 1:length(cc2)){
+    nmi<-names(cc2)[i]
+    vs<-str_extract_all(nmi, "[[:digit:]]+")
+    rnb<-as.numeric(vs[[1]][1])-3
+    cnb<-as.numeric(vs[[1]][2])
+    setCellValue(cc2[[nmi]],corrected.data[rnb,cnb])
+  }
+  saveWorkbook(workbook_vmar2,file = "EC_data_11mar2021_ARincl.xlsx")
+
+  nomyom<-which(grepl("none",data71MRIstaged$Myometrial.Invasion))
+  pid3<-data71MRIstaged$PatientID[nomyom]
+  ids3<-which(corrected.data$PatientID %in% pid3)
+  corrected.data$Availability.of.MRI[ids3]
+  corrected.data$Reasons.for.Exclusion[ids3]
+  corrected.data$Depth.of.Myometrial.Invasion[ids3]
+  data71MRIstaged$Myometrial.Invasion[which(data71MRIstaged$Myometrial.Invasion=="none ")]<-"none"
+  for(i in s:e)
+    print(table(data71MRIstaged[nomyom,i]))
+  for(i in cids)
+    print(table(corrected.data[ids3,i]))
+  corrected.data[ids3,cids]<-data71MRIstaged[nomyom,seq(s,e)]
+  
+  library(xlsx)
+  workbook_vmar3<-loadWorkbook(file = "EC_data_11mar2021_ARincl.xlsx")
+  sheets3<-getSheets(workbook_vmar3)
+  Ids3<-ids3+3
+  rows3<-getRows(sheets3$AllCases,rowIndex = Ids3)
+  cc3<-getCells(rows3,colIndex = cids)
+  library(stringr)
+  for(i in 1:length(cc3)){
+    nmi<-names(cc3)[i]
+    vs<-str_extract_all(nmi, "[[:digit:]]+")
+    rnb<-as.numeric(vs[[1]][1])-3
+    cnb<-as.numeric(vs[[1]][2])
+    setCellValue(cc3[[nmi]],corrected.data[rnb,cnb])
+  }
+  saveWorkbook(workbook_vmar3,file = "EC_data_11mar2021_ARfin.xlsx")
+
+  corrected.data$Reasons.for.Exclusion[510]<-"missingMRI & breast cancer"
+  #pe positiile ids3 si ultima din ids1 avem none
+  #renal lesions
+  #2 identical patients
+  
+  
+  exclMRIs<-which(grepl("EXCLUDE",data40MRIstage$MRI.Stage))
+  data40MRIstaged$MRI.Stage[exclMRIs]
+  data40MRIstaged$Reasons.for.Exclusion[exclMRIs]
+  table(corrected.data$Depth.of.Myometrial.Invasion)
+  data40MRIstaged$Radiomics.CaseID[seq(37,76)]
+  data40MRIstaged$Myometrial.Invasion[which(data40MRIstaged$Myometrial.Invasion=="<50%")]<-"sup"
+  data40MRIstaged$Myometrial.Invasion[which(data40MRIstaged$Myometrial.Invasion==">50%")]<-"deep"
+  toBfilled<-setdiff(seq(37,76),exclMRIs)
+  pid4<-data40MRIstaged$Radiomics.CaseID[toBfilled]
+  ids4<-which(corrected.data$radiomicsCaseID %in% pid4)
+  cids4<-c(grep("MRI.date",colnames(corrected.data)),cids)
+  fill.ids<-c(grep("MRI.Date",colnames(data40MRIstaged)),seq(s,e))
+  corrected.filled<-toBfilled[order(match(data40MRIstaged$Radiomics.CaseID[toBfilled], corrected.data$radiomicsCaseID[ids4]))]
+  corrected.data[ids4,cids4]<-data40MRIstaged[corrected.filled,fill.ids]
+  
+  library(xlsx)
+  workbook_vmar4<-loadWorkbook(file = "EC_data_11mar2021_ARfin.xlsx")
+  sheets4<-getSheets(workbook_vmar4)
+  Ids4<-ids4+3
+  rows4<-getRows(sheets4$AllCases,rowIndex = Ids4)
+  cc4<-getCells(rows4,colIndex = cids4)
+  library(stringr)
+  for(i in 1:length(cc4)){
+    nmi<-names(cc4)[i]
+    vs<-str_extract_all(nmi, "[[:digit:]]+")
+    rnb<-as.numeric(vs[[1]][1])-3
+    cnb<-as.numeric(vs[[1]][2])
+    setCellValue(cc4[[nmi]],corrected.data[rnb,cnb])
+  }
+  saveWorkbook(workbook_vmar4,file = "EC_data_11mar2021_NBlatest.xlsx")
+}
+
+extract.out.revisedMRIs<-function(){
+  rindices<-seq(37,76)
+  radiomics.ids<-data40MRIstaged$Radiomics.CaseID[rindices]
+  tbextracted<-which(dataMissedMRI$Radiomics.CaseID %in% radiomics.ids)
+  new.dataMissedMRI<-dataMissedMRI[-tbextracted,]
+  library(writexl)
+  write_xlsx(new.dataMissedMRI,"C:\\Users\\Casi\\Documents\\EndoProj\\hadMRI_but_missingMRIdata_updated.xlsx")
+}
+
+recheck.MRI.avail<-function()
+{
+  table(data$MRI.date)
+  table(data$Custom.worklist)
+  which(data$Availability.of.MRI=="yes")
+  
+  #discrepancies between the scan type and MRI date
+  
+  #there is an MRI date, but it states CT only
+  MRIdate_noMRIscan<-which(data$MRI.date!=""&!grepl("MRI",data$Custom.worklist)&grepl("CT",data$Custom.worklist))
+  #there is no MRI date, but it states that MRI has been performed
+  MRIscan_noMRIdate<-which(data$MRI.date==""&grepl("MRI",data$Custom.worklist))
+  ii<-c(MRIdate_noMRIscan,MRIscan_noMRIdate)
+  
+  PatientID<-data$PatientID[ii]
+  Included.Excluded<-data$Reasons.for.Exclusion[ii]
+  Radiomics.CaseID<-data$radiomicsCaseID[ii]
+  AgeAtDiagnosis<-data$AgeAtDiagnosis[ii]
+  MRI.Date<-data$MRI.date[ii]
+  Custom.Worklist<-data$Custom.worklist[ii]
+  MRI.Availability<-data$Availability.of.MRI[ii]
+  MRI.Stage<-data$X.2[ii]
+  MRI.myom.inv<-MRI.minv[ii]
+  #ds=date/scan discrepancies
+  df.ds<-data.frame(PatientID,Included.Excluded,Radiomics.CaseID,AgeAtDiagnosis,MRI.Date,Custom.Worklist,MRI.Availability,MRI.Stage)
+  df.ds$"Myometrial Invasion"<-MRI.myom.inv
+  df.ds
+  start<-grep("Y.N.4", colnames(data))
+  end<-grep("Y.N.22", colnames(data))
+  cn<-c("Other involvement: Cervical stroma","Vagina/Parametria","Adnexa","Serosa","Peritoneum/Omentum","R-pelvic LN","L-pelvic LN","Para-aortic LN","R-inguinal LN","L-inguinal LN")
+  length(cn)
+  df.ds[cn]<-data[ii,seq(start,end,by=5)]
+  df.ds
+  # "MRI date is recorded, but only CT scan is mentioned"
+  # "missing MRi date and data, but it is mentioned that patient had MRI"
+  # "missing MRI date, but evidence of MRI is recorded"
+  df.ds$"Error"<-
+  c(rep("no MRI scan mentioned even though MRI date is given",length(MRIdate_noMRIscan)),
+    rep("no MRI date but MRI scan is mentioned",length(MRIscan_noMRIdate)))
+
+  library(writexl)
+  write_xlsx(df.ds,"C:\\Users\\Casi\\Documents\\EndoProj\\MRI_date_vs_scanType.xlsx")
+}
+
+find.missing.stage.with.MRI<-function(){
+  MRInostage_findings<-which(data$Availability.of.MRI=="missing MRI stage ONLY")
+  #there is MRI, but MRI stage is missing
+  MRInostage_date<-which(data$MRI.date!="" & data$X.2=="") 
+  MRInostage_any_info<-which(grepl("missing",data$Availability.of.MRI))
+  
+  #patient had MRI but the MRI staging info is missing
+  MRInostage<-which(grepl("missing",data$Availability.of.MRI)&data$MRI.date!="")
+  data$Availability.of.MRI[MRInostage]
+  df.dst<-create.sep.df(MRInostage)
+  df.dst
+  df.dst$"Error"<-c("MRI date recorded but MRI staging information is missing")
+
+  library(writexl)
+  write_xlsx(df.dst,"C:\\Users\\Casi\\Documents\\EndoProj\\MRIdate_noMRIstaging.xlsx")  
+}
+
+which(data$Availability.of.MRI=="missing y/n in MRI findings")
+which(dataMissedMRI$Reasons.for.Exclusion!="missingMRI")
+
+create.sep.df<-function(ii){
+  PatientID<-data$PatientID[ii]
+  Included.Excluded<-data$Reasons.for.Exclusion[ii]
+  Radiomics.CaseID<-data$radiomicsCaseID[ii]
+  AgeAtDiagnosis<-data$AgeAtDiagnosis[ii]
+  MRI.Date<-data$MRI.date[ii]
+  Custom.Worklist<-data$Custom.worklist[ii]
+  MRI.Availability<-data$Availability.of.MRI[ii]
+  MRI.Stage<-data$X.2[ii]
+  MRI.myom.inv<-MRI.minv[ii]
+  #ds=date/scan discrepancies
+  df<-data.frame(PatientID,Included.Excluded,Radiomics.CaseID,AgeAtDiagnosis,MRI.Date,Custom.Worklist,MRI.Availability,MRI.Stage)
+  df$"Myometrial Invasion"<-MRI.myom.inv
+  
+  start<-grep("Y.N.4", colnames(data))
+  end<-grep("Y.N.22", colnames(data))
+  cn<-c("Other involvement: Cervical stroma","Vagina/Parametria","Adnexa","Serosa","Peritoneum/Omentum","R-pelvic LN","L-pelvic LN","Para-aortic LN","R-inguinal LN","L-inguinal LN")
+  df[cn]<-data[ii,seq(start,end,by=5)]
+  return(df)
+}
+
+add.column.ExcelTable<-function(col.name){
+  library(xlsx)
+  wb<-loadWorkbook("EC_data_14feb2021_provera.xlsx")
+  shh<-getSheets(wb)
+  col.to.find<-paste0("^",col.name,"$")
+  col.indx<-grep(col.to.find, colnames(data))
+  addDataFrame(data[,col.indx,drop=F], shh$AllCases, startColumn = col.indx, startRow = 3, row.names=FALSE)
+  saveWorkbook(wb,"EC_data_15feb2021.xlsx")
+}
+
+         
+#l<-list()
+l<-vector(mode = "list", length = nrow(data))
+filterCa.out<-function(cname){
+  # otherCa<-apply(data, 2, 
+  #                function(x) 
+  #                { 
+  #                  x[str_extract_all(x, cname)!="character(0)"]
+  #                })
+  # vec<-vector()
+  # for(i in 1:length(otherCa))
+  # {
+  #   if(length(otherCa[[i]])==1 && !is.na(otherCa[[i]]))
+  #     vec<-c(vec,(otherCa[[i]]))
+  # }
+  # return(vec)
+  
+  vec<-vector()
+  for(i in 1:nrow(data))
+  {
+    cell.val<-data[i,][grepl(cname,data[i,],ignore.case=TRUE)]
+    # we could have used [data[,i] %like% "renal"] for case sensitive
+    if(length(cell.val)>=1){
+      vec<-c(vec,cell.val)
+      l[[i]]<<-cell.val # global 
+    }
+    else
+      l[[i]]<-NULL
+  }
+  return(vec)
+}
+
+l3<-vector(mode = "list", length = nrow(data))
+genetic.syndromes<-function()
+{
+  lynch<-c(filterCa.out("Lynch"),filterCa.out("HNPCC"))
+  Filter(Negate(is.null), l)
+  
+  l2<-l
+  l2[which(lapply(l,is.null) == F)]<-"Lynch syndrome"
+  #l2
+  
+  l<<-vector(mode = "list", length = nrow(data))
+  
+  brca2<-filterCa.out("BRCA")
+  Filter(Negate(is.null), l)
+  
+  l3<<-l2
+  names(l3)<-names(l2)
+  l3[which(lapply(l2,is.null) == T&lapply(l,is.null) == F)]<<-"BRCA2 gene mutation"
+  l3[[188]]
+  #l3
+  
+  b<-l2[which(lapply(l2,is.null) == F&lapply(l,is.null) == F)]
+  if(length(b)>0){
+    b<-paste(b,"& BRCA2 gene mutation", sep=" ")
+    # add the new cancer in the latest list
+    l3[which(lapply(l2,is.null) == F&lapply(l,is.null) == F)]<<-b
+    #l3[[188]]
+  }
+  #b
+}
+
+search4genetic.pred<-function(){
+#add.categ.genetics
+#insert.end.col<-function(colname,inFile,outFile,lname)
+#{
+  data$"Genetic Predispositions"<- lapply(l3,function(x){ifelse(is.null(x),"none",x)})
+  data$"Genetic Predispositions"#colname, lname
+  library(xlsx)
+  workbook <- loadWorkbook("updated_EC_data - Copy.xlsx")#"EC_cleaned_anonymised_data_latest - Copy.xlsx"
+  sheets <- getSheets(workbook)
+  sheets
+  #columnToPreserve = readColumns(sheets$AllCases, 16, 16, startRow=1)
+  #addDataFrame(columnToPreserve, sheets$test, startColumn = 17, row.names = FALSE)
+  #and so on...
+  #ncol(data)
+  #colnames(data)
+  #simulating a dataframe with a single column
+  #ncol(data)+1
+  addDataFrame(data[,131,drop=F], sheets$AllCases, startColumn = 131, startRow = 3, row.names=FALSE)
+  #write.xlsx(df, workbook, sheetName="AllCases")#, row.names=TRUE)
+  saveWorkbook(workbook, 'EC_data_28jan2021.xlsx')
+  
+}
+         
+exhaustic.search4other.malignancies<-function(){
+init.vars()
+clean.stage()
+clean.minv()
+write.csv(accuracy.data,"stagingVSinvasion.csv",row.names=TRUE)
+print.incorrect.stage()
+print.incorrect.minv()
+stageIdata<-subset(accuracy.data,histo.stage %in% c("IA","IB") & MRI.stage %in% c("IA","IB"))
+stageIdata
+number.stage.stI<-sum(stageIdata$histo.stage!=stageIdata$MRI.stage)
+number.stage.stI
+number.minv.stI<-sum(stageIdata$histo.minv!=stageIdata$MRI.minv)
+number.minv.stI
+index.stage.stI<-which(stageIdata$histo.stage!=stageIdata$MRI.stage)
+index.minv.stI<-which(stageIdata$histo.minv!=stageIdata$MRI.minv)
+index.stage.stI
+index.minv.stI
+#add.column(stageIdata,"Yes.No.1","radiotherapy")
+
+
+renalCa<-filterCa.out("renal")
+renalCa
+renal.cancer<-renalCa[!grepl("adrenal",renalCa) & !grepl("infrarenal",renalCa) & !grepl("renal lesion",renalCa)]
+# adrenal, infrarenal, renal lesion should be excluded
+renal.cancer
+
+ind<-0
+l<<-lapply(l,function(x){ ind<<-ind+1
+  if(ind<=length(l)){
+    if(!str_contains(l[[ind]],"adrenal")&!str_contains(l[[ind]],"infrarenal")&!str_contains(l[[ind]],"renal lesion"))
+    { 
+      x<<-l[[ind]] 
+      #lfin[[ind]]<-"renal cancer"
+    }
+    else
+    {
+      x<<-NULL
+      #lfin[[ind]]<-NULL
+    }
+  }
+})
+names(l)<<-names(renal.cancer)
+Filter(Negate(is.null), l)
+l
+
+lfin<-vector(mode = "list", length = length(l))
+#lfin<-l
+#lfin<-list()
+lfin[which(lapply(l,is.null) == F)]<-"renal cancer"
+lfin
+# ind<<-0
+# lfin<-lapply(lfin,function(x){ ind<<-ind+1
+#   if(!is.null(x))
+#     lfin[[ind]]<-"renal cancer"
+#   else
+#     lfin[[ind]]<-NULL
+# })
+#names(lfin)<<-names(renal.cancer)
+Filter(Negate(is.null), lfin)
+lfin
+
+ovarianCa<-filterCa.out("ovar")
+ovarianCa
+ovary.cancer<-ovarianCa[grepl("ovarian",ovarianCa,ignore.case=TRUE)&!grepl("ovarian vein",ovarianCa)&!grepl("ovarian mets",ovarianCa) | grepl("tumour",ovarianCa,ignore.case=TRUE) | ovarianCa=="ovary ca"]
+#ovarian vein; ovary ca (particular cases)
+ovary.cancer
+
+ind<<-0
+l<<-lapply(l,function(x){ ind<<-ind+1
+if(ind<=length(l)){
+  if(str_contains(l[[ind]],"ovarian",ignore.case = TRUE)&!str_contains(l[[ind]],"ovarian vein")&!str_contains(l[[ind]],"ovarian mets") | str_contains(l[[ind]],"tumour", ignore.case = TRUE) | str_contains(l[[ind]],"ovary ca"))
+  {
+      x<<-l[[ind]] 
+      print(x)
+  }
+  else
+  {
+      x<<-NULL
+  }
+}
+})
+names(l)<<-names(ovary.cancer)
+Filter(Negate(is.null), l)
+
+lfin
+l
+lfin2<-lfin
+lfin2
+lfin2[which(lapply(lfin,is.null) == T&lapply(l,is.null) == F)]<-"ovarian cancer"
+lfin2
+
+length(lfin2)
+b<-lfin[which(lapply(lfin,is.null) == F&lapply(l,is.null) == F)]
+if(length(b)>0){
+  b<-paste(b,"& ovarian cancer", sep=" ")
+  lfin2[which(lapply(lfin,is.null) == F&lapply(l,is.null) == F)]<-b
+}
+b
+
+
+breastCa<-filterCa.out("breast")
+breastCa # no need to filter
+names(l)<<-names(breastCa)
+l
+lfin3<-lfin2
+lfin3[which(lapply(lfin2,is.null) == T&lapply(l,is.null) == F)]<-"breast cancer"
+lfin3
+
+b<-lfin2[which(lapply(lfin2,is.null) == F&lapply(l,is.null) == F)]
+if(length(b)>0){
+  b<-paste(b,"& breast cancer", sep=" ")
+  lfin3[which(lapply(lfin2,is.null) == F&lapply(l,is.null) == F)]<-b
+}
+b
+
+
+lungCa<-filterCa.out("lung")
+lungCa
+#lung(s) met(s) /lesion, "lobectomy lung", mets lung, "pleura, lungs" 
+#"lymph nodes and lung", "lung and peritoneum", "lung and liver", "lung"
+#"lung, peritoneal spleen", "lung + pelvic side wall", "umbilical nodule and lung"
+#lung nodule(s), progression lungs
+#recurrence
+lung.cancer<-lungCa[grepl("lung primary",lungCa,ignore.case=TRUE) | grepl("lung ca",lungCa)]
+lung.cancer
+
+ind<<-0
+l<<-lapply(l,function(x){ ind<<-ind+1
+if(ind<=length(l)){
+  if(str_contains(l[[ind]],"lung primary",ignore.case = TRUE) | str_contains(l[[ind]],"lung ca"))
+  {
+    x<<-l[[ind]] 
+    print(x)
+  }
+  else
+  {
+    x<<-NULL
+  }
+}
+})
+#names(l)<<-names(lung.cancer)
+Filter(Negate(is.null), l)
+#they seem like 2 different entries, but they have the same index
+
+lfin4<-lfin3
+lfin4[which(lapply(lfin3,is.null) == T&lapply(l,is.null) == F)]<-"lung cancer"
+lfin4
+
+b<-lfin3[which(lapply(lfin3,is.null) == F&lapply(l,is.null) == F)]
+if(length(b)>0){
+  b<-paste(b,"& lung cancer", sep=" ")
+  lfin4[which(lapply(lfin3,is.null) == F&lapply(l,is.null) == F)]<-b
+}
+b
+
+
+colonCa<-filterCa.out("colon cancer")
+colon.cancer<-c(colonCa,filterCa.out("concurrent sigmoid primary"))
+colon.cancer
+# l<-vector(mode = "list", length = nrow(data))
+# for(i in 1:nrow(data))
+# {
+#   cell.val1<-data[i,][grepl("colon cancer",data[i,])]
+#   cell.val2<-data[i,][grepl("concurrent sigmoid primary",data[i,])]
+#   if(length(cell.val1)>=1){
+#     l[[i]]<-cell.val1 
+#   }
+#   else
+#     l[[i]]<-NULL
+#   if(length(cell.val2)>=1){
+#     l[[i]]<-cell.val2
+#     print(cell.val2)
+#   }
+#   else
+#     l[[i]]<-NULL
+# }
+#names(l)<<-names(colon.cancer)
+Filter(Negate(is.null), l)
+
+lfin5<-lfin4
+lfin5[which(lapply(lfin4,is.null) == T&lapply(l,is.null) == F)]<-"colon cancer"
+lfin5[[411]]
+
+b<-lfin4[which(lapply(lfin4,is.null) == F&lapply(l,is.null) == F)]
+if(length(b)>0){
+  b<-paste(b,"& colon cancer", sep=" ")
+  lfin5[which(lapply(lfin4,is.null) == F&lapply(l,is.null) == F)]<-b
+}
+b
+
+
+colorectalCa<-filterCa.out("colorectal")
+Filter(Negate(is.null), l)
+
+lfin6<-lfin5
+lfin6[which(lapply(lfin5,is.null) == T&lapply(l,is.null) == F)]<-"colorectal cancer"
+lfin6[[181]]
+
+b<-lfin5[which(lapply(lfin5,is.null) == F&lapply(l,is.null) == F)]
+if(length(b)>0){
+  b<-paste(b,"& colorectal cancer", sep=" ")
+  lfin6[which(lapply(lfin5,is.null) == F&lapply(l,is.null) == F)]<-b
+}
+b
+
+
+analCa<-filterCa.out("anal")
+Filter(Negate(is.null), l)
+
+lfin7<-lfin6
+lfin7[which(lapply(lfin6,is.null) == T&lapply(l,is.null) == F)]<-"anal cancer"
+lfin7[[181]]
+l[[181]]
+
+b<-lfin6[which(lapply(lfin6,is.null) == F&lapply(l,is.null) == F)]
+if(length(b)>0){
+  b<-paste(b,"& anal cancer", sep=" ")
+  lfin7[which(lapply(lfin6,is.null) == F&lapply(l,is.null) == F)]<-b
+  lfin7
+}
+b
+
+
+lynch<-c(filterCa.out("Lynch"),filterCa.out("HNPCC"))
+Filter(Negate(is.null), l)
+
+lfin8<-lfin7
+lfin8[which(lapply(lfin7,is.null) == T&lapply(l,is.null) == F)]<-"Lynch syndrome"
+lfin8
+
+# see if our current filter points out an entry 
+#that is already marked with some cancers;
+# extract which cancers have been detected previously
+b<-lfin7[which(lapply(lfin7,is.null) == F&lapply(l,is.null) == F)]
+if(length(b)>0){
+  b<-paste(b,"& Lynch syndrome", sep=" ")
+  # add the new cancer in the latest list
+  lfin8[which(lapply(lfin7,is.null) == F&lapply(l,is.null) == F)]<-b
+  lfin8[[51]]
+  lfin8[[181]]
+}
+b
+
+
+brca2<-filterCa.out("BRCA")
+Filter(Negate(is.null), l)
+
+lfin9<-lfin8
+lfin9[which(lapply(lfin8,is.null) == T&lapply(l,is.null) == F)]<-"BRCA2 gene mutation"
+lfin9[[188]]
+lfin9
+
+b<-lfin8[which(lapply(lfin8,is.null) == F&lapply(l,is.null) == F)]
+if(length(b)>0){
+  b<-paste(b,"& BRCA2 gene mutation", sep=" ")
+  # add the new cancer in the latest list
+  lfin9[which(lapply(lfin8,is.null) == F&lapply(l,is.null) == F)]<-b
+  lfin9[[188]]
+}
+b
+
+
+grade<-data$"X.1"
+grade
+lfin10<-lfin9
+length(lfin10)
+excluded.subtypes<-c("no cancer","uterine metastasis from other cancer","stromal","sarcoma","no histology","typical HP","atypical HP","neuroendocrine")
+for(nECsubtype in excluded.subtypes){
+  for(idx in which(grade==nECsubtype))
+    if(is.null(lfin10[[idx]]))
+      lfin10[[idx]]<-nECsubtype
+    else{
+      b<-lfin10[[idx]]
+      b<-paste(b,"&",nECsubtype, sep=" ")
+      lfin10[[idx]]<-b
+      print(idx)
+    }
+}
+which(grade=="uterine metastasis from other cancer")
+length(lfin10)
+lfin10[[218]]
+lfin10[[438]]
+lfin10[[443]]
+lfin10[[392]]
+lfin10
+
+
+data$"Reasons for exclusion"<- lapply(lfin10,function(x){ifelse(is.null(x),"include",x)})
+data$"Reasons for exclusion"
+library(xlsx)
+workbook <- loadWorkbook("EC_cleaned_anonymised_data_latest - Copy.xlsx")
+sheets <- getSheets(workbook)
+sheets
+#columnToPreserve = readColumns(sheets$AllCases, 16, 16, startRow=1)
+#addDataFrame(columnToPreserve, sheets$test, startColumn = 17, row.names = FALSE)
+#and so on...
+ncol(data)
+colnames(data)
+#simulating a dataframe with a single column
+addDataFrame(data[,130,drop=F], sheets$AllCases, startColumn = 130, startRow = 3, row.names=FALSE)
+#write.xlsx(df, workbook, sheetName="AllCases")#, row.names=TRUE)
+#saveWorkbook(workbook, 'updated_EC_data.xlsx')
+#saveWorkbook(workbook, 'updated_EC_data - Copy.xlsx')
+
+genetic.syndromes()
+l3[[442]]#507,441,442 - Lynch syndrome
+l3[[188]]#BRCA gene mutation 
+
+
+#class(colnames(data)[1])
+#data$Scan.CT[data$Scan.CT %like% "yes - recurrence"]
+}
 
