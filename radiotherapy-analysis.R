@@ -258,7 +258,7 @@ subtitle1<-grid.text("Kaplan-Meier estimates with radiotherapy unadjusted\n",gp=
 ggs1<-ggsurvplot(mainfit.IAmri,risk.table = TRUE,#pval = TRUE,
            xlab="OS Time (days)",
            legend.title="radiotherapy",
-           legend.labs=c("yes", "no"))
+           legend.labs=c("no", "yes"))
 surv_pvalue(
   fit=mainfit.IAmri,
   data = dat,
@@ -270,7 +270,7 @@ mainfit.IBmri<-survfit(radiot.surv~radiot+stageRMN,data=dat,subset=oneB)
 ggs2<-ggsurvplot(mainfit.IBmri,risk.table = TRUE,#pval = TRUE,
            xlab="OS Time (days)",
            legend.title="radiotherapy",
-           legend.labs=c("yes", "no"))
+           legend.labs=c("no", "yes"))
 surv_pvalue(
   fit=mainfit.IBmri,
   data = dat,
@@ -285,6 +285,10 @@ garr2<-grid.arrange(ggs2$plot,ggs2$table,layout_matrix = rbind(c(1,1),c(1,1),c(1
 btm2<-grid.text("n = 106\n(subset: MRI stage = IB)", gp=gpar(fontsize=16))
 btmf<-grid.arrange(btm1,btm2,ncol=2)#,layout_matrix = rbind(c(1,2)))
 grr<-grid.arrange(garr1,garr2,ncol=2)
+png("stageIAvsIB-w&woutRadiot_KM_corrected.png",width=16,height=8,units='in',res=300)
+grid.arrange(grr,btmf,layout_matrix=rbind(c(1,1),c(1,1),c(1,1),c(1,1),c(2,2)))
+dev.off()
+  
 grrf<-grid.arrange(grr,btmf,layout_matrix=rbind(c(1,1),c(1,1),c(1,1),c(1,1),c(2,2)))
 ##
 subtitle2<-grid.text("Survival curves predicted by the Cox (PH) model with the radiotherapy adjusted for chemotherapy + tumour grade + age",gp=gpar(fontsize=16,fontfamily="Arial"))
