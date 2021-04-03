@@ -512,69 +512,73 @@ plotIDa.predstrength.survCurvComp<-function(subpop){
   return(ggsc$plot)
 }
 
-subsetting<-function(){
 
-summary(subset(model11nostrat,stage.MRI1=="IB"))
-png("MRIstage&CRSinOS-subpopIB-subs.png",width=16,height=8,units='in',res=300)
-grid.arrange(plotID.predstrength.survCurvComp(stage.MRI1=="IB"),bottom=paste("\nn = ",length(stageIBsubpop)," (subset: MRI stage = IB)"))
-dev.off()
+initial.model.comp<-function()
+{
+time1=ec.surv1[,1]
+status=ec.surv1[,2]
+datam11<-data.frame(time1,status,stage.MRI1,clinicrs,age1,tumourv.groups2)
+summary(coxph(formula = Surv(time1,status) ~ stage.MRI1 + clinicrs + age1 + tumourv.groups2),
+data=datam11)
 
-png("MRIstage&CRSinOS-subpopIB-subsid.png",width=16,height=8,units='in',res=300)
-grid.arrange(plotID.predstrength.survCurvComp(stageIBsubpop),bottom=paste("\nn = ",length(stageIBsubpop)," (subset: MRI stage = IB)"))
-dev.off()
+stratmodel1<-coxph(ec.surv1~stage.MRI1+clinicrs+age1+tumourv.groups2)
+stratmodelwout1<-coxph(ec.surv1~clinicrs+age1+tumourv.groups2)
+stratmodelwout2<-coxph(ec.surv1~stage.MRI1+age1+tumourv.groups2)
+plot_summs(stratmodel1,stratmodelwout1,stratmodelwout2,colors=cls,
+           coefs = c("MRI Stage = IA"="stage.MRI1IA", "MRI Stage = IB"="stage.MRI1IB","MRI Stage = II"="stage.MRI1II","MRI Stage = IIIA"="stage.MRI1IIIA","MRI Stage = IIIB"="stage.MRI1IIIB","MRI Stage = IIIC1"="stage.MRI1IIIC1","MRI Stage = IIIC2"="stage.MRI1IIIC2","MRI Stage = IV"="stage.MRI1IV",
+                     "Age"="age1", "Tumour Volume > median (Grouping 2)"="tumourv.groups2>8839.888mm3",
+                     "Tumour Grade = 1"="grade.histo11","Tumour Grade = 2"="grade.histo12","Tumour Grade = 3"="grade.histo13",
+                     #"Histological Type = endometrioid"="type.histo1endometrioid","Histological Type = clear cell"="type.histo1clear cell","Histological Type = mixed high grade"="type.histo1mixed high grade","Histological Type = serous"="type.histo1serous",
+                     #"Histological Stage = IA"="stage.histo1IA", "Histological Stage = IB"="stage.histo1IB","Histological Stage = II"="stage.histo1II","Histological Stage = IIIA"="stage.histo1IIIA","Histological Stage = IIIB"="stage.histo1IIIB","Histological Stage = IIIC1"="stage.histo1IIIC1","Histological Stage = IIIC2"="stage.histo1IIIC2","Histological Stage = IV"="stage.histo1IV",
+                     "Clinical Risk Score = low"="clinicrslow","Clinical Risk Score = intermediate"="clinicrsintermediate","Clinical Risk Score = high"="clinicrshigh","Clinical Risk Score = advanced"="clinicrsadvanced"
+           ),legend.title="Model by primary predictors",model.names = c("with MRI Stage and CRS","without MRI Stage","without CRS"))
+#CRS strongly predicts survival, stronger than MRI stage
+summary(stratmodelwout1)#Concordance= 0.805  (se = 0.029 )
+summary(stratmodelwout2)#Concordance= 0.73  (se = 0.034 )
+summary(nostratmodelwout1)#Concordance= 0.81  (se = 0.029 )
+summary(nostratmodelwout2)#Concordance= 0.744  (se = 0.034 )
 
-png("MRIstage&CRSinOS-subpopIB-corr1.png",width=16,height=8,units='in',res=300)
-gglss<-list("with MRI stage + CRS + age + tumour.groupingII"=survfit(model11nostrat,data=subset(fin.df2,stage.MRI1=="IB")),"with CRS + age + tumour.groupingII"=survfit(model11a,data=subset(fin.df2,stage.MRI1=="IB")),"with MRI stage + age + tumour.groupingII"=survfit(model11bc,data=subset(fin.df2,stage.MRI1=="IB")))
-ggsc<-ggsurvplot_combine(gglss,xlab="OS Time (days)",title="Comparing the Primary Predictors Strength (MRI stage vs CRS): Cox (PH) Regression Model Comparisons by Survival Curves Estimate",legend.title = "Model by predictors", fin.df2)#, palette = "Dark2")
-ggsc$plot<-ggsc$plot+scale_colour_manual(values = c(rgb(1,0,0,1),rgb(0,0,1,0.5),rgb(0.9,0.65,0)))
-grid.arrange(ggsc$plot,bottom=paste("\nn = ",length(stageIBsubpop)," (subset: MRI stage = IB)"))
-dev.off()
+model1<-coxph(ec.surv1~stage.MRI1+clinicrs)
+model2<-coxph(ec.surv1~stage.MRI1+clinicrs+age1)
+anova(model1,model2,test="LRT")#significantly diff
+summary(model1)#Concordance= 0.74  (se = 0.036 )
+summary(model2)#Concordance= 0.801  (se = 0.029 )
+#this^suggests model2 is better
+AIC(model1,model2)#lower for model2
+BIC(model1,model2)#lower for model2
+#they^suggest the same
+model3<-coxph(ec.surv1~stage.MRI1+clinicrs+age1+tumour.vol1)
+anova(model2,model3,test="LRT")#signif diff
+summary(model2)#Concordance= 0.801  (se = 0.029 )
+summary(model3)#Concordance= 0.813  (se = 0.029 )
+AIC(model2,model3)#smaller for model3
+BIC(model2,model3)#smaller for model3
+#model3 is better
+##
+model4<-coxph(ec.surv1~stage.MRI1+clinicrs+age1+tumourv.groups2)
+summary(model4)#xConcordance= 0.805  (se = 0.029 )
+model10<-coxph(ec.surv1~stage.MRI1+clinicrs+strata(age1)+tumourv.groups2)#good!
+summary(model10)
+model11<-coxph(ec.surv1~strata(stage.MRI1)+clinicrs+age1+tumourv.groups2)
+summary(model11)
+summary(coxph(ec.surv1~stage.MRI1+strata(clinicrs)+age1+tumourv.groups2))
 
-png("MRIstage&CRSinOS-subpopIB-corr2.png",width=16,height=8,units='in',res=300)
-gglss<-list("with MRI stage + CRS + age + tumour.groupingII"=survfit(model11nostrat,data=subset(fin.df2,stage.MRI1=="IB")),"with CRS + age + tumour.groupingII"=survfit(model11a,data=subset(fin.df2,stage.MRI1=="IB")),"with MRI stage + age + tumour.groupingII"=survfit(model11bc,data=subset(fin.df2,stage.MRI1=="IB")))
-ggsc<-ggsurvplot_combine(gglss,xlab="OS Time (days)",title="Comparing the Primary Predictors Strength (MRI stage vs CRS): Cox (PH) Regression Model Comparisons by Survival Curves Estimate",legend.title = "Model by predictors", data=subset(find.df2,stage.MRI1=="IB"))#, palette = "Dark2")
-ggsc$plot<-ggsc$plot+scale_colour_manual(values = c(rgb(1,0,0,1),rgb(0,0,1,0.5),rgb(0.9,0.65,0)))
-grid.arrange(ggsc$plot,bottom=paste("\nn = ",length(stageIBsubpop)," (subset: MRI stage = IB)"))
-dev.off()
-
-png("plot1.png",width=16,height=8,units='in',res=300)
-ggsurvplot(survfit(coxph(ec.surv1 ~ stage.MRI1 + clinicrs + age1 + tumourv.groups2),data=fin.df2))
-dev.off()
-png("plot2.png",width=16,height=8,units='in',res=300)
-ggsurvplot(survfit(coxph(ec.surv1 ~ stage.MRI1 + clinicrs + age1 + tumourv.groups2),data=subset(fin.df2,stage.MRI1=="IB")))
-dev.off()
-
-model11b<-coxph(ec.survb~crsb+ageb+tumourv.groupsb)
-model11ab<-coxph(ec.survb~crsb+ageb+tumourv.groupsb)
-model11bb<-coxph(ec.survb~ageb+tumourv.groupsb)
-png("MRIstage&CRSinOS-subpopIB.png",width=16,height=8,units='in',res=300)
-grid.arrange(plotM.predstrength.survCurvComp(model11b,model11ab,model11bb),bottom=paste("\nn = ",length(stageIBsubpop)," (subset: MRI stage = IB)"))
-dev.off()
-
-model11all<-coxph(ec.survall~stage.MRIall+crsall+ageall+tumourv.groupsall)
-model11alla<-coxph(ec.survall~crsall+ageall+tumourv.groupsall)
-model11allb<-coxph(ec.survall~stage.MRIall+ageall+tumourv.groupsall)
-png("MRIstage&CRSinOS-allpop.png",width=16,height=8,units='in',res=300)
-grid.arrange(plotM.predstrength.survCurvComp(model11all,model11alla,model11allb),bottom=paste("\nn = ",length(allstudypop)," (our study population)"))
-dev.off()
-
-#grid.arrange(predstrength.survCurvComp(1:3),bottom=paste("\nn = ",50," (subset: MRI stage = IB)"))
-model11n4<-coxph(ec.survn4~stage.MRIn4+crsn4+agen4+tumourv.groupsn4)
-model11an4<-coxph(ec.survn4~crsn4+agen4+tumourv.groupsn4)
-model11nb4<-coxph(ec.survn4~stage.MRIn4+agen4+tumourv.groupsn4)
-png("MRIstage&CRSinOS-subpopWoutIV.png",width=16,height=8,units='in',res=300)
-grid.arrange(plotM.predstrength.survCurvComp(model11n4,model11an4,model11nb4),bottom=paste("\nn = ",length(stagenIVsubpop)," (subset: MRI stage = all except for IV)"))
-dev.off()
-
-png("MRIstage&CRSinOS-allpop-subpopWoutIV.png",width=16,height=8,units='in',res=300)
-grid.arrange(plotIDa.predstrength.survCurvComp(stagenIVsubpop),bottom=paste("\nn = ",length(stagenIVsubpop)," (subset: MRI stage = all except for IV)"))
-dev.off()
-
-png("MRIstage&CRSinOS-allpop-subpopIB.png",width=16,height=8,units='in',res=300)
-grid.arrange(plotIDa.predstrength.survCurvComp(which(stage.MRIall=="IB")),bottom=paste("\nn = ",length(stageIBsubpop)," (subset: MRI stage = IB)"))
-dev.off()
+model5<-coxph(ec.surv1~stage.MRI1+clinicrs+age1+strata(tumourv.groups2))
+summary(model5)#xConcordance= 0.791  (se = 0.03 )
+model6<-coxph(ec.surv1~stage.MRI1+clinicrs+factor(age.groups1)+strata(tumourv.groups2))
+summary(model6)#Preferred!Concordance= 0.769  (se = 0.031 )
+##
+model7<-coxph(ec.surv1~stage.MRI1+strata(clinicrs)+age1+tumour.vol1)
+summary(model7)#X
+model8<-coxph(ec.surv1~stage.MRI1+strata(clinicrs,age1)+tumour.vol1)
+summary(model8)#X
+model9<-coxph(ec.surv1~stage.MRI1+strata(clinicrs,age1)+tumourv.groups2)
+summary(model9)#X!
+summary(coxph(ec.surv1 ~ stage.MRI1 + strata(clinicrs)+ age1 + 
+                tumourv.groups2))#X
+summary(coxph(ec.surv1 ~ strata(stage.MRI1,clinicrs)+tumourv.groups2+age1))
+#X
 }
-
 
 # we decide on model 11
 ultimate.comparison<-function(){
@@ -967,3 +971,214 @@ ggplot(surv.df1,aes(x = stage.MRI1unf, y = ecsurv1.time))+ geom_boxplot(size = .
 #grid.arrange(ggp1,ggp2, ncol = 2, top = "Relationship between MRI Stage and Survival Time (n = 319, subset: MRI stage = I)\n")
 dev.off()
 }
+
+
+compare.nonstrata.models<-function()
+{
+nostratmodel1<-coxph(ec.surv1~stage.MRI1+clinicrs+age1+tumour.vol1)
+nostratmodel2<-coxph(ec.surv1~clinicrs+stage.MRI1+age1+tumour.vol1)
+#anova(nostratmodel,nostratmodel1,test="LRT")
+summary(stratmodel3)
+summary(nostratmodel1)
+summary(nostratmodel2)
+summary(stratmodel3)
+surv.df2<-data.frame(ec.surv1[,1],stage.MRI1,clinicrs,age1,tumour.vol1)
+#library(Hmisc) #for rcorr
+#library(sjPlot)
+correlation::correlation(surv.df2,method="kendall")
+nostratmodelwout1<-coxph(ec.surv1~clinicrs+age1+tumour.vol1)
+nostratmodelwout2<-coxph(ec.surv1~stage.MRI1+age1+tumour.vol1)
+anova(nostratmodel1,nostratmodelwout1,test="LRT")
+anova(nostratmodel1,nostratmodelwout2,test="LRT")#signif.diff
+AIC(nostratmodel1,nostratmodelwout2)
+BIC(nostratmodel1,nostratmodelwout2)
+summary(nostratmodel1)
+summary(nostratmodelwout2)
+#clinical rs is a better predictor among stage I patients
+}
+
+
+library(jtools)
+library(ggstance)
+library(broom.mixed)
+
+compare.them.all<-function()
+{
+cls=vector()
+for(i in seq(5,70,by=5))
+cls<-c(cls,colors(1)[i])
+png("StageICoxModelComparison.png",width=16,height=8,units='in',res=300)
+ps<-plot_summs(coxph.model1,coxph.model2,coxph.model3,coxph.model4,coxph.model5,model6,stratmodel,stratmodel2,stratmodel3,stratmodel4,model11,nostratmodel1,nostratmodelwout1,nostratmodelwout2,colors=cls,
+           coefs = c("MRI Stage = IA"="stage.MRI1IA", "MRI Stage = IB"="stage.MRI1IB","MRI Stage = II"="stage.MRI1II","MRI Stage = IIIA"="stage.MRI1IIIA","MRI Stage = IIIB"="stage.MRI1IIIB","MRI Stage = IIIC1"="stage.MRI1IIIC1","MRI Stage = IIIC2"="stage.MRI1IIIC2","MRI Stage = IV"="stage.MRI1IV",
+                     "Age"="age1", "Tumour Volume"="tumour.vol1",
+                    "Tumour Grade = 1"="grade.histo11","Tumour Grade = 2"="grade.histo12","Tumour Grade = 3"="grade.histo13","Tumour Volume Grouping 1"="tumourv.groups1","Tumour Volume Grouping 2"="tumourv.groups2",
+                    "Histological Type = endometrioid"="type.histo1endometrioid","Histological Type = clear cell"="type.histo1clear cell","Histological Type = mixed high grade"="type.histo1mixed high grade","Histological Type = serous"="type.histo1serous",
+                    "Histological Stage = IA"="stage.histo1IA", "Histological Stage = IB"="stage.histo1IB","Histological Stage = II"="stage.histo1II","Histological Stage = IIIA"="stage.histo1IIIA","Histological Stage = IIIB"="stage.histo1IIIB","Histological Stage = IIIC1"="stage.histo1IIIC1","Histological Stage = IIIC2"="stage.histo1IIIC2","Histological Stage = IV"="stage.histo1IV",
+                    "Clinical Risk Score = low"="clinicrslow","Clinical Risk Score = intermediate"="clinicrsintermediate","Clinical Risk Score = high"="clinicrshigh","Clinical Risk Score = advanced"="clinicrsadvanced",
+                    "Tumour Volume > median (Grouping 2)"="tumourv.groups2>8839.888mm3",
+                     "45-70 Age Group"="factor(age.groups1)45-70",">70 Age Group"="factor(age.groups1)>70"
+           ))
+ps+labs(title="Cox Models Comparison for Stage IA Subpopulation",subtitle ="based on the predictors common to at least two of the models")  #between the Predictors Common to at least Two Models")#overlapping predictors")
+dev.off()
+}
+
+
+comparison.contd.subsets<-function()
+{
+stageIBsubpop<-intersect(allInclStudy,which(corrected.data$X.2=="IB"))
+length(stageIBsubpop)
+ec.survb<-generate.Surv.obj(stageIBsubpop)
+stage.MRIb<-corrected.data$X.2[stageIBsubpop]
+ageb<-corrected.data$AgeAtDiagnosis[stageIBsubpop]
+tumour.volb<-corrected.data$TumourVolume.mm.3.[stageIBsubpop]
+tumourv.groupsb<-vector()
+tumourv.groupsb[which(tumour.volb<=median(tumour.volb))]<-'<=8839.888mm3'
+tumourv.groupsb[which(tumour.volb>median(tumour.volb))]<-'>8839.888mm3'
+crsb<-corrected.data$Risk.score[stageIBsubpop]
+
+stratmodelIB<-coxph(ec.survb~strata(stage.MRIb)+crsb+ageb+tumourv.groupsb)
+summary(stratmodelIB)
+
+
+ec.survall<-generate.Surv.obj(allInclStudy)
+stage.MRIall<-corrected.data$X.2[allInclStudy]
+table(stage.MRIall)
+ageall<-corrected.data$AgeAtDiagnosis[allInclStudy]
+tumour.volall<-corrected.data$TumourVolume.mm.3.[allInclStudy]
+tumourv.groupsall<-vector()
+tumourv.groupsall[which(tumour.volall<=median(tumour.volall))]<-'<=8839.888mm3'
+tumourv.groupsall[which(tumour.volall>median(tumour.volall))]<-'>8839.888mm3'
+crsall<-corrected.data$Risk.score[allInclStudy]
+
+stratmodelall<-coxph(ec.survall~strata(stage.MRIall)+crsall+ageall+tumourv.groupsall)
+summary(stratmodelall)
+summary(coxph(ec.survall~stage.MRIall+crsall+ageall+tumour.volall))
+model13<-coxph(ec.survall~stage.MRIall+crsall+strata(ageall)+tumour.volall)
+summary(coxph(ec.survall~stage.MRIall+crsall+ageall+tumourv.groupsall))
+model12<-coxph(ec.survall~stage.MRIall+crsall+strata(ageall)+tumourv.groupsall)
+summary(model12)
+summary(model13)
+library(jtools)
+library(ggstance)
+library(broom.mixed)
+png("StudyCoxModelComparison.png",width=16,height=8,units='in',res=300)
+ps<-plot_summs(model12,model13,colors=cls,
+               coefs = c("MRI Stage = IA"="stage.MRIallIA", "MRI Stage = IB"="stage.MRIallIB","MRI Stage = II"="stage.MRIallII","MRI Stage = IIIA"="stage.MRIallIIIA","MRI Stage = IIIB"="stage.MRIallIIIB","MRI Stage = IIIC1"="stage.MRIallIIIC1","MRI Stage = IIIC2"="stage.MRIallIIIC2","MRI Stage = IV"="stage.MRIallIV",
+                         "Age"="ageall", "Tumour Volume"="tumour.volall",
+                         "Tumour Grade = 1"="grade.histo11","Tumour Grade = 2"="grade.histo12","Tumour Grade = 3"="grade.histo13","Tumour Volume Grouping 1"="tumourv.groups1","Tumour Volume Grouping 2"="tumourv.groups2",
+                         #"Histological Type = endometrioid"="type.histo1endometrioid","Histological Type = clear cell"="type.histo1clear cell","Histological Type = mixed high grade"="type.histo1mixed high grade","Histological Type = serous"="type.histo1serous",
+                         #"Histological Stage = IA"="stage.histo1IA", "Histological Stage = IB"="stage.histo1IB","Histological Stage = II"="stage.histo1II","Histological Stage = IIIA"="stage.histo1IIIA","Histological Stage = IIIB"="stage.histo1IIIB","Histological Stage = IIIC1"="stage.histo1IIIC1","Histological Stage = IIIC2"="stage.histo1IIIC2","Histological Stage = IV"="stage.histo1IV",
+                         "Clinical Risk Score = low"="crsalllow","Clinical Risk Score = intermediate"="crsallintermediate","Clinical Risk Score = high"="crsallhigh","Clinical Risk Score = advanced"="crsalladvanced",
+                         "Tumour Volume > median (Grouping 2)"="tumourv.groups2>8839.888mm3"
+                         
+               ))
+ps+labs(title="Comparison between Cox Models for the Entire Study Population",subtitle ="based on their common predictors")  #between the Predictors Common to at least Two Models")#overlapping predictors")
+dev.off()
+
+
+stagenIVsubpop<-setdiff(allInclStudy,which(corrected.data$X.2=="IV"))
+length(stagenIVsubpop)
+ec.survn4<-generate.Surv.obj(stagenIVsubpop)
+stage.MRIn4<-corrected.data$X.2[stagenIVsubpop]
+agen4<-corrected.data$AgeAtDiagnosis[stagenIVsubpop]
+tumour.voln4<-corrected.data$TumourVolume.mm.3.[stagenIVsubpop]
+tumourv.groupsn4<-vector()
+tumourv.groupsn4[which(tumour.voln4<=median(tumour.voln4))]<-'<=8839.888mm3'
+tumourv.groupsn4[which(tumour.voln4>median(tumour.voln4))]<-'>8839.888mm3'
+crsn4<-corrected.data$Risk.score[stagenIVsubpop]
+
+stratmodelnIV<-coxph(ec.survn4~strata(stage.MRIn4)+crsn4+agen4+tumourv.groupsn4)
+summary(stratmodelnIV)
+
+}
+
+
+subsetting<-function(){
+summary(subset(model11nostrat,stage.MRI1=="IB"))
+png("MRIstage&CRSinOS-subpopIB-subs.png",width=16,height=8,units='in',res=300)
+grid.arrange(plotID.predstrength.survCurvComp(stage.MRI1=="IB"),bottom=paste("\nn = ",length(stageIBsubpop)," (subset: MRI stage = IB)"))
+dev.off()
+
+png("MRIstage&CRSinOS-subpopIB-subsid.png",width=16,height=8,units='in',res=300)
+grid.arrange(plotID.predstrength.survCurvComp(stageIBsubpop),bottom=paste("\nn = ",length(stageIBsubpop)," (subset: MRI stage = IB)"))
+dev.off()
+
+png("MRIstage&CRSinOS-subpopIB-corr1.png",width=16,height=8,units='in',res=300)
+gglss<-list("with MRI stage + CRS + age + tumour.groupingII"=survfit(model11nostrat,data=subset(fin.df2,stage.MRI1=="IB")),"with CRS + age + tumour.groupingII"=survfit(model11a,data=subset(fin.df2,stage.MRI1=="IB")),"with MRI stage + age + tumour.groupingII"=survfit(model11bc,data=subset(fin.df2,stage.MRI1=="IB")))
+ggsc<-ggsurvplot_combine(gglss,xlab="OS Time (days)",title="Comparing the Primary Predictors Strength (MRI stage vs CRS): Cox (PH) Regression Model Comparisons by Survival Curves Estimate",legend.title = "Model by predictors", fin.df2)#, palette = "Dark2")
+ggsc$plot<-ggsc$plot+scale_colour_manual(values = c(rgb(1,0,0,1),rgb(0,0,1,0.5),rgb(0.9,0.65,0)))
+grid.arrange(ggsc$plot,bottom=paste("\nn = ",length(stageIBsubpop)," (subset: MRI stage = IB)"))
+dev.off()
+
+png("MRIstage&CRSinOS-subpopIB-corr2.png",width=16,height=8,units='in',res=300)
+gglss<-list("with MRI stage + CRS + age + tumour.groupingII"=survfit(model11nostrat,data=subset(fin.df2,stage.MRI1=="IB")),"with CRS + age + tumour.groupingII"=survfit(model11a,data=subset(fin.df2,stage.MRI1=="IB")),"with MRI stage + age + tumour.groupingII"=survfit(model11bc,data=subset(fin.df2,stage.MRI1=="IB")))
+ggsc<-ggsurvplot_combine(gglss,xlab="OS Time (days)",title="Comparing the Primary Predictors Strength (MRI stage vs CRS): Cox (PH) Regression Model Comparisons by Survival Curves Estimate",legend.title = "Model by predictors", data=subset(find.df2,stage.MRI1=="IB"))#, palette = "Dark2")
+ggsc$plot<-ggsc$plot+scale_colour_manual(values = c(rgb(1,0,0,1),rgb(0,0,1,0.5),rgb(0.9,0.65,0)))
+grid.arrange(ggsc$plot,bottom=paste("\nn = ",length(stageIBsubpop)," (subset: MRI stage = IB)"))
+dev.off()
+
+png("plot1.png",width=16,height=8,units='in',res=300)
+ggsurvplot(survfit(coxph(ec.surv1 ~ stage.MRI1 + clinicrs + age1 + tumourv.groups2),data=fin.df2))
+dev.off()
+png("plot2.png",width=16,height=8,units='in',res=300)
+ggsurvplot(survfit(coxph(ec.surv1 ~ stage.MRI1 + clinicrs + age1 + tumourv.groups2),data=subset(fin.df2,stage.MRI1=="IB")))
+dev.off()
+
+model11b<-coxph(ec.survb~crsb+ageb+tumourv.groupsb)
+model11ab<-coxph(ec.survb~crsb+ageb+tumourv.groupsb)
+model11bb<-coxph(ec.survb~ageb+tumourv.groupsb)
+png("MRIstage&CRSinOS-subpopIB.png",width=16,height=8,units='in',res=300)
+grid.arrange(plotM.predstrength.survCurvComp(model11b,model11ab,model11bb),bottom=paste("\nn = ",length(stageIBsubpop)," (subset: MRI stage = IB)"))
+dev.off()
+
+model11all<-coxph(ec.survall~stage.MRIall+crsall+ageall+tumourv.groupsall)
+model11alla<-coxph(ec.survall~crsall+ageall+tumourv.groupsall)
+model11allb<-coxph(ec.survall~stage.MRIall+ageall+tumourv.groupsall)
+png("MRIstage&CRSinOS-allpop.png",width=16,height=8,units='in',res=300)
+grid.arrange(plotM.predstrength.survCurvComp(model11all,model11alla,model11allb),bottom=paste("\nn = ",length(allstudypop)," (our study population)"))
+dev.off()
+
+#grid.arrange(predstrength.survCurvComp(1:3),bottom=paste("\nn = ",50," (subset: MRI stage = IB)"))
+model11n4<-coxph(ec.survn4~stage.MRIn4+crsn4+agen4+tumourv.groupsn4)
+model11an4<-coxph(ec.survn4~crsn4+agen4+tumourv.groupsn4)
+model11nb4<-coxph(ec.survn4~stage.MRIn4+agen4+tumourv.groupsn4)
+png("MRIstage&CRSinOS-subpopWoutIV.png",width=16,height=8,units='in',res=300)
+grid.arrange(plotM.predstrength.survCurvComp(model11n4,model11an4,model11nb4),bottom=paste("\nn = ",length(stagenIVsubpop)," (subset: MRI stage = all except for IV)"))
+dev.off()
+
+png("MRIstage&CRSinOS-allpop-subpopWoutIV.png",width=16,height=8,units='in',res=300)
+grid.arrange(plotIDa.predstrength.survCurvComp(stagenIVsubpop),bottom=paste("\nn = ",length(stagenIVsubpop)," (subset: MRI stage = all except for IV)"))
+dev.off()
+
+png("MRIstage&CRSinOS-allpop-subpopIB.png",width=16,height=8,units='in',res=300)
+grid.arrange(plotIDa.predstrength.survCurvComp(which(stage.MRIall=="IB")),bottom=paste("\nn = ",length(stageIBsubpop)," (subset: MRI stage = IB)"))
+dev.off()
+}
+
+
+compare.MRInCRS.strength<-funtion()
+{
+#png("CoxModelComparisonW&WoutPrimaryPredictors.png",width=16,height=8,units='in',res=300)
+model11b<-coxph(ec.surv1 ~ strata(stage.MRI1) + age1 + tumourv.groups2)
+model11bc<-coxph(ec.surv1 ~ stage.MRI1 + age1 + tumourv.groups2)
+png("CRSvsMRIstage-predictorstrength-CoxModelsComparisons.png",width=16,height=8,units='in',res=300)
+ps<-plot_summs(model11nostrat,model11a,model11bc,colors=c("red","blue","orange"),coefs = c("MRI stage = IB relative to IA"="stage.MRI1IB",#"MRI Stage = II"="stage.MRI1II","MRI Stage = IIIA"="stage.MRI1IIIA","MRI Stage = IIIB"="stage.MRI1IIIB","MRI Stage = IIIC1"="stage.MRI1IIIC1","MRI Stage = IIIC2"="stage.MRI1IIIC2","MRI Stage = IV"="stage.MRI1IV",
+                                                          "Age"="age1", "Tumour Volume"="tumour.vol1",
+                                                          #"Tumour Grade = 1"="grade.histo11","Tumour Grade = 2"="grade.histo12","Tumour Grade = 3"="grade.histo13",
+                                                          #"Tumour Volume Grouping 1"="tumourv.groups1",
+                                                          #"Tumour Volume Grouping 2"="tumourv.groups2",
+                                                          #"Histological Type = endometrioid"="type.histo1endometrioid","Histological Type = clear cell"="type.histo1clear cell","Histological Type = mixed high grade"="type.histo1mixed high grade","Histological Type = serous"="type.histo1serous",
+                                                          #"Histological Stage = IA"="stage.histo1IA", "Histological Stage = IB"="stage.histo1IB","Histological Stage = II"="stage.histo1II","Histological Stage = IIIA"="stage.histo1IIIA","Histological Stage = IIIB"="stage.histo1IIIB","Histological Stage = IIIC1"="stage.histo1IIIC1","Histological Stage = IIIC2"="stage.histo1IIIC2","Histological Stage = IV"="stage.histo1IV",
+                                                          "CRS = intermediate relative to low"="clinicrsintermediate","CRS = high relative to intermediate"="clinicrshigh","CRS = advanced relative to high"="clinicrsadvanced",
+                                                          "Tumour Volume > (median = 8839.888 mm^3) relative to\ntumour volume <= 8839.888 mm^3 (grouping II)"="tumourv.groups2>8839.888mm3"
+                                                          #"45-70 Age Group"="factor(age.groups1)45-70",">70 Age Group"="factor(age.groups1)>70"
+),legend.title="Model by predictors",model.names = c("with MRI stage + CRS + age + tumour.groupingII","with CRS + age + tumour.groupingII","with MRI stage + age + tumour.groupingII"))
+ps<-ps+labs(title="Comparing the Primary Predictors Strength (CRS vs MRI Stage):\nCox (PH) Regression Model Comparisons by Beta Coefficients",x="Estimate (Regression Coefficient)",y="Predictor")+theme(text=element_text(family="Arial"))#annotate(geom="text",label="n = 319, number of events = 57",x=Inf,y=-Inf)  #between the Predictors Common to at least Two Models")#overlapping predictors")
+grid.arrange(ps,bottom="n = 319, number of events = 57 (subset: MRI stage = I)")
+dev.off()
+}
+
+
+
+     
+     
