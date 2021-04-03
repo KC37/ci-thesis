@@ -16,6 +16,77 @@ return(Surv(os.timea,os.eventa))
 }
 
 
+# fit model with the initial, not final study population (before gathering all the info)
+fit.Cox<-function(){
+  os.timef<-os.time1[-213]
+  os.eventf<-os.event1[-213]
+  library(survival)
+  ec.osf<-Surv(os.timef,os.eventf)
+  MRI.stagef<-data$X.2[allincl]
+  km_stage <- survfit(ec.osf ~ MRI.stagef)
+  plot(km_stage, fun = "cloglog", xlab = "Time (in days) using log",
+       ylab = "log-log survival", main = "log-log curves by clinic") 
+  library(survminer)
+  ggsurvplot(km_stage, fun = "cloglog", data=data)
+  
+  histo.stagef<-data$STAGE[allincl]
+  km_histo.stage<-survfit(ec.osf ~ histo.stagef)
+  plot(km_histo.stage, fun = "cloglog", xlab = "Time (in days) using log",
+       ylab = "log-log survival", main = "log-log curves by clinic") 
+  #convergent and divergent lines -> important covariate(s) missed
+  #boxplot(ec.osf~)
+  plot(survfit(ec.osf ~ histo.gradef), fun = "cloglog", xlab = "Time (in days) using log",
+       ylab = "log-log survival", main = "log-log curves by clinic") 
+  ggsurvplot(survfit(ec.osf ~ histo.gradef), fun = "cloglog", data=data)
+  ggsurvplot(survfit(ec.osf ~ histo.typef), fun = "cloglog", data=data)
+  
+  
+  library(survival)
+  #coxph fits the Cox (PH) regression model 
+  coxph.stage<-coxph(ec.osf ~ MRI.stagef,data=data)
+  summary(coxph.stage)
+  exp(confint(coxph.stage))
+  test.ph_stage <- cox.zph(coxph.stage)
+  ind3b<-intersect(which(data$X.2=="IIIB"),allincl)
+  ind3c<-intersect(which(data$X.2=="IIIC"),allincl)
+  #no events in the subset of cases with a positive value of stage IIIB and IIIC, respectively
+  #beta values too small (high in module) for them
+  data$Death.Date[ind3b]
+  data$Death.Date[ind3c]
+  
+  agef<-data$AgeAtDiagnosis[allincl]
+  
+  histo.gradef<-data$Grade[allincl]
+  histo.typef<-data$X.1[allincl]
+  coxphmodel<-coxph(ec.osf ~ agef+histo.gradef+histo.typef)
+  test.ph <- cox.zph(coxphmodel)
+  #plot(test.ph)
+  ggcoxzph(test.ph)
+  coxph_histo.gradef<-coxph(ec.osf~histo.gradef)
+  coxph_histo.typef<-coxph(ec.osf~histo.typef)
+  cox.zph(coxph_histo.gradef)
+  cox.zph(coxph_histo.typef)
+  
+  #here we can assume the proportional hazards, since p-vals are not
+  #statistically significant
+  library(survminer)
+  ggcoxzph(test.ph)#here we can observe that beta does not vary much over time
+  ggcoxdiagnostics(coxphmodel, type = "dfbeta",
+                   linear.predictions = FALSE, ggtheme = theme_bw())
+  ggcoxdiagnostics(coxphmodel, type = "deviance",
+                   linear.predictions = FALSE, ggtheme = theme_bw())
+  ggcoxfunctional(ec.osf ~ agef + log(agef) + sqrt(agef),data=data)
+  #it only works for categorical covariates
+  # km_age <- survfit(ec.osf ~ agef)
+  # plot(km_age, fun = "cloglog", xlab = "Time (in days) using log",
+  #      ylab = "log-log survival", main = "log-log curves by clinic") 
+  # library(survminer)
+  # ggsurvplot(km_age, fun = "cloglog", data=data)
+  deaths<-length(which(os.eventf==1))
+  #78 deaths & 3-5 covariates -> 15-26 events per covariate (so at least 10)
+}
+
+
 check.Cox.assumpt<-function(){
 allInclStudy<-intersect(allstudypop,which(!is.na(corrected.data$TumourVolume.mm.3.)))
 length(allInclStudy)
@@ -46,6 +117,7 @@ plot(predict(stratmodel3),residuals(stratmodel3, type="martingale"),
      main="Residual Plot",las=1)
 abline(h=0) # y=residual=0
 lines(smooth.spline(predict(cox.age),residuals(cox.age,type="martingale")),col="red")
+
 
 #cox.zph(coxph(Surv(os.timea,os.eventa)~stage.MRI.rescalef))
 
@@ -106,6 +178,9 @@ abline(h=0,col="red")
 par(mfrow=c(1,1))
 plot(cox.zph(coxph.model1)[4])
 abline(h=0,col="red")
+     
+#the dash lines are confidence intervals/confidence bands around that smoother line
+#add a (red) line at 0 to see how often is a change of 0 contained in this interval 
 
 summary(coxph.model1)
 table(grade.histo1)
