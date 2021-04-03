@@ -1,3 +1,29 @@
+library(survival)
+library(ggplot2)
+library(survminer)#this also loads ggplot2, so the previous load is not absolutely necessary
+
+
+clean.radiot_and_chemot<-function(studypop){
+  chemotherapy<-corrected.data$"Yes.No"
+  y.n<-corrected.data$"Yes.No"
+  chemotherapy[which(grepl("y",y.n,ignore.case = TRUE)&!grepl("\\?",y.n)&nchar(y.n)<=nchar("y (for recurrence)"))]<-"yes"
+  chemotherapy[which(grepl("n",y.n,ignore.case = TRUE)&!grepl("\\?",y.n)&nchar(y.n)<=3|grepl("decline",y.n))]<-"no"
+  table(chemotherapy)
+  chemo.complete<-which(chemotherapy %in% c("yes","no"))
+  missingChemo<-setdiff(studypop,chemo.complete)
+  radiotherapy<-corrected.data$"Yes.No.1"
+  y.n.1<-corrected.data$"Yes.No.1"
+  radiotherapy[which(grepl("y",y.n.1,ignore.case = TRUE)&!grepl("\\?",y.n.1)&nchar(y.n.1)<=nchar("y(Mt Vernon)"))]<-"yes"
+  radiotherapy[which((grepl("n",y.n.1,ignore.case = TRUE)&!grepl("\\?",y.n.1)&nchar(y.n.1)<=3|grepl("no |n ",y.n.1))&!grepl("y/n",radiotherapy))]<-"no"
+  table(radiotherapy)
+  radth.complete<-which(radiotherapy %in% c("yes","no"))
+  missingRadth<-setdiff(studypop,radth.complete)
+  length(studypop)-length(missingRadth)
+  table(corrected.data$ImageVoxelSize.mm.)
+}
+
+
+prepare.dt4plot<-function(){
 hadRadiot<-intersect(radiot.pop,which(radiotherapy=="yes"))
 hadNRadiot<-intersect(radiot.pop,which(radiotherapy=="no"))
 table(corrected.data$Risk.score[hadRadiot])
@@ -7,6 +33,7 @@ table(radiotherapy[which(radiotherapy %in% c("yes","no"))])
 table(radiotherapy[which(radiotherapy %nin% c("yes","no"))])
 table(chemotherapy[which(chemotherapy %in% c("yes","no"))])
 table(chemotherapy[which(chemotherapy %nin% c("yes","no"))])
+#establish the study sample for this analysis
 wtreatment<-intersect(which(radiotherapy %in% c("yes","no")),which(chemotherapy %in% c("yes","no")))
 radiot.pop.allst<-intersect(wtreatment,allstudypop)
 radiot.pop<-intersect(radiot.pop.allst,which(corrected.data$X.2 %in% c("IA","IB")))
@@ -66,11 +93,10 @@ stime<-radiot.surv[,1]
 sevent<-radiot.surv[,2]
 dat<-data.frame(stime,sevent,radiot.surv,radiot,chemot,stageRMN,gradeh,age,CRS)
 #corrected.data[which(corrected.data$PatientID%in%radiot.pop)]
+}
 
-library(survival)
-library(ggplot2)
-library(survminer)
 
+generate.radiotplots<-function(){
 #p.adjust for FDR adjustment
 mainfit<-survfit(radiot.surv~radiot+stageRMN)
 gg2<-ggsurvplot(mainfit,dat,risk.table = TRUE,#pval = TRUE,
@@ -421,9 +447,12 @@ dev.off()
 
 ggadjustedcurves(md5,data=dat,variable = "radiot")
 ggadjustedcurves(md8,data=dat,variable = "radiot")
-#our model tells us though that survival increases with radiotherapy
-basehaz(md8)
 
+basehaz(md8)
+}
+
+
+#subsetting
 #risk.table = FALSE,pval = TRUE
 # radiot1<-radiot
 # radiot1<-factor(radiot1)#or could do radiot1<-factor(radiot) directly
