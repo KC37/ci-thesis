@@ -61,7 +61,7 @@ logistic.regression<-function()
   #for a 1 unit increase in tumour volume, the odds of moving from one stage to another
   #are 554.4781 times greater, given that the other variables in the model are held constant
   #-the tumour with high volume have 554.4781 times the odds of being very likely to be classified as higher stages
-  #compared to students who do not have a lower volume
+  #compared to patients who do not have a lower volume
   exp(-coef(logistic.model))
   #tumours which have a higher tumour volume have a 100-1.8=98.2% lower odds of being less 
   #likely to correspond to a higher stage.
@@ -264,7 +264,7 @@ logistic.regression<-function()
   ci1 <- confint(olm1)
   confint.default(olm1) # CIs assuming normality
   #the conf.int does not contain 0, so the parameter estimate is stat.sign.
-  ##for a unit increase in tumour volume, the log of odds of having higher stage increases by 6.3180273
+  ##for a unit increase in tumour volume, the log of odds of having higher stage increases by 6.272829
   #the estimated effect is smaller=>this suggests confounding by age
   
   #the slope(i.e. the coefficient) in the regression equation is equal to
@@ -274,7 +274,7 @@ logistic.regression<-function()
   #for a 1 unit increase in tumour volume, the odds of moving from one stage to another
   #are 530 times greater, given that the other variables in the model are held constant
   #-the tumour with high volume have 530 times the odds of being very likely to be classified as higher stages
-  #compared to students who do not have a lower volume
+  #compared to patients who do not have a lower volume
   exp(-coef(olm1))
   #tumours which have a higher tumour volume have a 100-1.8=98.2% lower odds of being less 
   #likely to correspond to a higher stage.
