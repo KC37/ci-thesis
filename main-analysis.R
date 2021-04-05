@@ -119,5 +119,23 @@ KM.crs<-function(){
   # dev.off()
   }
   
-  
+consort.diagram<-function()
+{
+  malign<-which(grepl("cancer",corrected.data$Reasons.for.Exclusion)&!grepl("no cancer",corrected.data$Reasons.for.Exclusion))
+  length(malign)
+  table(corrected.data$Reasons.for.Exclusion[malign])
+  missingMRI<-which(corrected.data$Reasons.for.Exclusion=="missingMRI")
+  missingMRIst<-setdiff(missingMRI,allstudypop)
+  length(missingMRIst)
+  remaining<-setdiff(1:624,union(malign,missingMRIst))
+  table(corrected.data$Reasons.for.Exclusion[remaining])
+  histoNAccpt<-which(corrected.data$Accepted.Histology.Type=="no")
+  length(histoNAccpt)
+  incld<-which(corrected.data$Reasons.for.Exclusion=="include")
+  no.op<-seq(576,624)
+  leftout<-setdiff(1:624,c(malign,missingMRIst,histoNAccpt,allstudypop))
+  length(leftout)
+  corrected.data$Reasons.for.Exclusion[setdiff(leftout,no.op)]
+  corrected.data$Death.Date[setdiff(incld,allstudypop)]
+}
   
